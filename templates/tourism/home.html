@@ -1,0 +1,242 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Smart Tourism India - Discover Incredible India{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero-section">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-8">
+                <div class="hero-content">
+                    <h1 class="hero-title">Discover <span class="text-gradient">Incredible India</span></h1>
+                    <p class="hero-subtitle">
+                        Explore India's rich heritage, diverse cultures, and breathtaking destinations with our AI-powered tourism platform
+                    </p>
+                    <div class="hero-actions">
+                        <a href="{% url 'tourism:destinations' %}" class="btn btn-primary btn-lg me-3">
+                            <i class="fas fa-compass me-2"></i>
+                            Explore Destinations
+                        </a>
+                        <a href="{% url 'chatbot:chat' %}" class="btn btn-outline-light btn-lg">
+                            <i class="fas fa-robot me-2"></i>
+                            AI Assistant
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4">
+                <div class="hero-stats">
+                    <div class="stat-card">
+                        <h3 class="stat-number">{{ total_destinations }}+</h3>
+                        <p class="stat-label">Destinations</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3 class="stat-number">{{ total_states }}+</h3>
+                        <p class="stat-label">States Covered</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3 class="stat-number">8</h3>
+                        <p class="stat-label">Categories</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Search Section -->
+<section class="py-5 bg-light">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="search-container">
+                    <form method="GET" action="{% url 'tourism:search' %}" id="searchForm">
+                        <input type="text" name="q" class="search-bar" placeholder="Search destinations, cities, states..." id="searchInput">
+                        <button type="submit" class="search-btn">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Featured Destinations -->
+<section class="section-padding">
+    <div class="container">
+        <div class="text-center mb-5">
+            <h2 class="section-title">Featured Destinations</h2>
+            <p class="section-subtitle">Discover India's most iconic and breathtaking places</p>
+        </div>
+        
+        <div class="row">
+            {% for destination in featured_destinations %}
+            <div class="col-lg-4 col-md-6 mb-4">
+                <div class="card destination-card h-100 fade-in">
+                    <div class="position-relative">
+                        {% if destination.main_image %}
+                        <img src="{{ destination.main_image.url }}" class="card-img-top" alt="{{ destination.name }}">
+                        {% else %}
+                        <div class="card-img-top bg-gradient d-flex align-items-center justify-content-center" style="height: 250px;">
+                            <i class="fas fa-mountain fa-3x text-white"></i>
+                        </div>
+                        {% endif %}
+                        
+                        {% if user.is_authenticated %}
+                        <button class="wishlist-btn" data-destination-id="{{ destination.id }}">
+                            <i class="far fa-heart"></i>
+                        </button>
+                        {% endif %}
+                        
+                        <div class="category-tags">
+                            {% for category in destination.categories.all %}
+                            <span class="category-tag">{{ category.get_name_display }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    <div class="card-body">
+                        <h5 class="card-title">{{ destination.name }}</h5>
+                        <p class="location-info">
+                            <i class="fas fa-map-marker-alt me-1"></i>
+                            {{ destination.city }}, {{ destination.state.name }}
+                        </p>
+                        
+                        <div class="rating-display">
+                            <div class="star-rating">
+                                {% with destination.average_rating as rating %}
+                                {% for i in "12345" %}
+                                    {% if forloop.counter <= rating %}
+                                    <i class="fas fa-star"></i>
+                                    {% else %}
+                                    <i class="far fa-star"></i>
+                                    {% endif %}
+                                {% endfor %}
+                                {% endwith %}
+                            </div>
+                            <span class="rating-count">({{ destination.total_reviews }} reviews)</span>
+                        </div>
+                        
+                        <p class="card-text">{{ destination.short_description|truncatewords:15 }}</p>
+                        
+                        <div class="d-flex justify-content-between align-items-center">
+                            <a href="{% url 'tourism:destination_detail' destination.slug %}" class="btn btn-primary">
+                                <i class="fas fa-info-circle me-1"></i> Details
+                            </a>
+                            {% if destination.latitude and destination.longitude %}
+                            <button class="btn btn-outline-secondary btn-sm" onclick="focusOnDestination({
+                                name: '{{ destination.name|escapejs }}',
+                                latitude: '{{ destination.latitude }}',
+                                longitude: '{{ destination.longitude }}',
+                                slug: '{{ destination.slug }}'
+                            })">
+                                <i class="fas fa-map-marker-alt"></i>
+                            </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="col-12 text-center">
+                <p class="text-muted">No featured destinations available at the moment.</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- Categories Section -->
+<section class="section-padding bg-light">
+    <div class="container">
+        <div class="text-center mb-5">
+            <h2 class="section-title">Explore by Category</h2>
+            <p class="section-subtitle">Find destinations that match your interests</p>
+        </div>
+        
+        <div class="row">
+            {% for category in categories %}
+            <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
+                <a href="{% url 'tourism:destinations_by_category' category.name %}" class="text-decoration-none">
+                    <div class="card category-card h-100 text-center">
+                        <div class="card-body">
+                            <i class="{{ category.icon }} fa-3x text-primary mb-3"></i>
+                            <h5 class="card-title">{{ category.get_name_display }}</h5>
+                            <p class="card-text text-muted">{{ category.destination_count }} destinations</p>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- Map Section -->
+<section class="section-padding">
+    <div class="container">
+        <div class="text-center mb-5">
+            <h2 class="section-title">Explore India Map</h2>
+            <p class="section-subtitle">Interactive map showing all destinations</p>
+        </div>
+        
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body p-0">
+                        <div id="map" style="height: 500px; width: 100%;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Call to Action -->
+<section class="bg-gradient text-white py-5">
+    <div class="container text-center">
+        <h2 class="mb-3">Ready to Explore India?</h2>
+        <p class="lead mb-4">Get personalized recommendations from our AI assistant</p>
+        <a href="{% url 'chatbot:chat' %}" class="btn btn-light btn-lg">
+            <i class="fas fa-robot me-2"></i>
+            Start Chatting
+        </a>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize featured destinations on map when loaded
+    if (typeof showDestinationsOnMap === 'function') {
+        const destinations = [
+            {% for destination in featured_destinations %}
+            {% if destination.latitude and destination.longitude %}
+            {
+                name: "{{ destination.name|escapejs }}",
+                latitude: "{{ destination.latitude }}",
+                longitude: "{{ destination.longitude }}",
+                city: "{{ destination.city|escapejs }}",
+                state: "{{ destination.state.name|escapejs }}",
+                description: "{{ destination.short_description|escapejs }}",
+                rating: {{ destination.average_rating }},
+                slug: "{{ destination.slug }}",
+                categories: [{% for cat in destination.categories.all %}"{{ cat.name }}"{% if not forloop.last %},{% endif %}{% endfor %}]
+            }{% if not forloop.last %},{% endif %}
+            {% endif %}
+            {% endfor %}
+        ];
+        
+        setTimeout(() => {
+            if (window.map) {
+                showDestinationsOnMap(destinations);
+            }
+        }, 1000);
+    }
+});
+</script>
+{% endblock %}
