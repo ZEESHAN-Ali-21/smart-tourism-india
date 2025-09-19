@@ -1,0 +1,182 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}All Destinations - Smart Tourism India{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-5 bg-light">
+    <div class="container">
+        <div class="row">
+            <div class="col-12">
+                <h1 class="mb-4">
+                    <i class="fas fa-mountain me-2"></i>
+                    Discover Amazing Destinations
+                </h1>
+                
+                <!-- Search and Filters -->
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <form method="get" class="row g-3">
+                            <div class="col-md-4">
+                                <input type="text" name="search" class="form-control" 
+                                       placeholder="Search destinations..." value="{{ search_query }}">
+                            </div>
+                            <div class="col-md-2">
+                                <select name="category" class="form-select">
+                                    <option value="">All Categories</option>
+                                    {% for category in categories %}
+                                        <option value="{{ category.name }}" 
+                                                {% if selected_category == category.name %}selected{% endif %}>
+                                            {{ category.get_name_display }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <select name="state" class="form-select">
+                                    <option value="">All States</option>
+                                    {% for state in states %}
+                                        <option value="{{ state.name }}" 
+                                                {% if selected_state == state.name %}selected{% endif %}>
+                                            {{ state.name }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <select name="rating" class="form-select">
+                                    <option value="">Any Rating</option>
+                                    <option value="4.5" {% if selected_rating == '4.5' %}selected{% endif %}>4.5+ Stars</option>
+                                    <option value="4.0" {% if selected_rating == '4.0' %}selected{% endif %}>4.0+ Stars</option>
+                                    <option value="3.5" {% if selected_rating == '3.5' %}selected{% endif %}>3.5+ Stars</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <button type="submit" class="btn btn-primary w-100">
+                                    <i class="fas fa-search"></i> Search
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                
+                <!-- Results Count -->
+                <div class="mb-3">
+                    <p class="text-muted">
+                        Found {{ destinations|length }} destination{{ destinations|length|pluralize }}
+                        {% if search_query %}for "{{ search_query }}"{% endif %}
+                    </p>
+                </div>
+                
+                <!-- Destinations Grid -->
+                <div class="row">
+                    {% for destination in destinations %}
+                        <div class="col-lg-4 col-md-6 mb-4">
+                            <div class="card h-100 shadow-sm destination-card">
+                                {% if destination.main_image %}
+                                    <img src="{{ destination.main_image.url }}" class="card-img-top" 
+                                         alt="{{ destination.name }}" style="height: 250px; object-fit: cover;">
+                                {% else %}
+                                    <div class="card-img-top bg-secondary d-flex align-items-center justify-content-center" 
+                                         style="height: 250px;">
+                                        <i class="fas fa-image fa-3x text-white"></i>
+                                    </div>
+                                {% endif %}
+                                
+                                <div class="card-body d-flex flex-column">
+                                    <h5 class="card-title">{{ destination.name }}</h5>
+                                    <p class="card-text text-muted mb-2">
+                                        <i class="fas fa-map-marker-alt"></i> 
+                                        {{ destination.city }}, {{ destination.state.name }}
+                                    </p>
+                                    <p class="card-text">{{ destination.short_description|truncatewords:20 }}</p>
+                                    
+                                    <!-- Categories -->
+                                    <div class="mb-2">
+                                        {% for category in destination.categories.all %}
+                                            <span class="badge bg-primary me-1">
+                                                {{ category.get_name_display }}
+                                            </span>
+                                        {% endfor %}
+                                    </div>
+                                    
+                                    <!-- Rating -->
+                                    <div class="mb-3">
+                                        <div class="d-flex align-items-center">
+                                            <div class="me-2">
+                                                {% for i in "12345" %}
+                                                    {% if forloop.counter <= destination.average_rating %}
+                                                        <i class="fas fa-star text-warning"></i>
+                                                    {% else %}
+                                                        <i class="far fa-star text-warning"></i>
+                                                    {% endif %}
+                                                {% endfor %}
+                                            </div>
+                                            <small class="text-muted">
+                                                {{ destination.average_rating }} ({{ destination.total_reviews }} reviews)
+                                            </small>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mt-auto">
+                                        <a href="{% url 'tourism:destination_detail' destination.slug %}" 
+                                           class="btn btn-primary">
+                                            <i class="fas fa-eye"></i> View Details
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% empty %}
+                        <div class="col-12">
+                            <div class="alert alert-info text-center">
+                                <h4><i class="fas fa-info-circle"></i> No destinations found</h4>
+                                <p>Try adjusting your search filters or <a href="{% url 'tourism:destinations' %}">view all destinations</a>.</p>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+                
+                <!-- Pagination -->
+                {% if is_paginated %}
+                    <nav aria-label="Destinations pagination">
+                        <ul class="pagination justify-content-center">
+                            {% if page_obj.has_previous %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page=1{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.state %}&state={{ request.GET.state }}{% endif %}{% if request.GET.rating %}&rating={{ request.GET.rating }}{% endif %}">First</a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.state %}&state={{ request.GET.state }}{% endif %}{% if request.GET.rating %}&rating={{ request.GET.rating }}{% endif %}">Previous</a>
+                                </li>
+                            {% endif %}
+                            
+                            <li class="page-item active">
+                                <span class="page-link">{{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+                            </li>
+                            
+                            {% if page_obj.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.state %}&state={{ request.GET.state }}{% endif %}{% if request.GET.rating %}&rating={{ request.GET.rating }}{% endif %}">Next</a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.state %}&state={{ request.GET.state }}{% endif %}{% if request.GET.rating %}&rating={{ request.GET.rating }}{% endif %}">Last</a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.destination-card {
+    transition: transform 0.2s;
+}
+
+.destination-card:hover {
+    transform: translateY(-5px);
+}
+</style>
+{% endblock %}

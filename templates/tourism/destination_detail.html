@@ -1,0 +1,418 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ destination.name }} - Smart Tourism India{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-5">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8">
+                <!-- Main Image -->
+                <div class="mb-4">
+                    {% if destination.main_image %}
+                        <img src="{{ destination.main_image.url }}" 
+                             class="img-fluid rounded shadow" 
+                             alt="{{ destination.name }}"
+                             style="width: 100%; height: 400px; object-fit: cover;">
+                    {% else %}
+                        <div class="bg-secondary rounded d-flex align-items-center justify-content-center" 
+                             style="height: 400px;">
+                            <i class="fas fa-image fa-5x text-white"></i>
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <!-- Destination Info -->
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <div>
+                                <h1 class="mb-2">{{ destination.name }}</h1>
+                                <p class="text-muted mb-0">
+                                    <i class="fas fa-map-marker-alt"></i> 
+                                    {{ destination.city }}, {{ destination.state.name }}
+                                </p>
+                            </div>
+                            {% if user.is_authenticated %}
+                                <button class="btn btn-outline-danger" id="wishlistBtn" 
+                                        data-destination-id="{{ destination.id }}">
+                                    <i class="{% if in_wishlist %}fas{% else %}far{% endif %} fa-heart"></i>
+                                    {% if in_wishlist %}Remove from Wishlist{% else %}Add to Wishlist{% endif %}
+                                </button>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Categories -->
+                        <div class="mb-3">
+                            {% for category in destination.categories.all %}
+                                <a href="{% url 'tourism:destinations_by_category' category.name %}" 
+                                   class="badge bg-primary text-decoration-none me-1">
+                                    <i class="{{ category.icon }}"></i> {{ category.get_name_display }}
+                                </a>
+                            {% endfor %}
+                        </div>
+                        
+                        <!-- Rating -->
+                        <div class="mb-3">
+                            <div class="d-flex align-items-center">
+                                <div class="me-3">
+                                    {% for i in "12345" %}
+                                        {% if forloop.counter <= destination.average_rating %}
+                                            <i class="fas fa-star text-warning"></i>
+                                        {% else %}
+                                            <i class="far fa-star text-warning"></i>
+                                        {% endif %}
+                                    {% endfor %}
+                                    <span class="ms-2 fw-bold">{{ destination.average_rating }}</span>
+                                </div>
+                                <span class="text-muted">({{ destination.total_reviews }} reviews)</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Description -->
+                        <div class="mb-4">
+                            <h3>About {{ destination.name }}</h3>
+                            <p>{{ destination.description }}</p>
+                        </div>
+                        
+                        <!-- Quick Info -->
+                        <div class="row">
+                            {% if destination.best_time_to_visit %}
+                                <div class="col-md-6 mb-3">
+                                    <h5><i class="fas fa-calendar-alt text-primary"></i> Best Time to Visit</h5>
+                                    <p>{{ destination.best_time_to_visit }}</p>
+                                </div>
+                            {% endif %}
+                            {% if destination.entry_fee %}
+                                <div class="col-md-6 mb-3">
+                                    <h5><i class="fas fa-ticket-alt text-primary"></i> Entry Fee</h5>
+                                    <p>{{ destination.entry_fee }}</p>
+                                </div>
+                            {% endif %}
+                            {% if destination.opening_hours %}
+                                <div class="col-md-6 mb-3">
+                                    <h5><i class="fas fa-clock text-primary"></i> Opening Hours</h5>
+                                    <p>{{ destination.opening_hours }}</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Cultural & Historical Information -->
+                <div class="row">
+                    {% if destination.historical_significance %}
+                        <div class="col-md-6 mb-4">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <h5 class="card-title">
+                                        <i class="fas fa-monument text-primary"></i> Historical Significance
+                                    </h5>
+                                    <p class="card-text">{{ destination.historical_significance }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+                    {% if destination.cultural_importance %}
+                        <div class="col-md-6 mb-4">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <h5 class="card-title">
+                                        <i class="fas fa-theater-masks text-primary"></i> Cultural Importance
+                                    </h5>
+                                    <p class="card-text">{{ destination.cultural_importance }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+                
+                {% if destination.local_cuisine %}
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <h5 class="card-title">
+                                <i class="fas fa-utensils text-primary"></i> Local Cuisine
+                            </h5>
+                            <p class="card-text">{{ destination.local_cuisine }}</p>
+                        </div>
+                    </div>
+                {% endif %}
+                
+                {% if destination.how_to_reach %}
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <h5 class="card-title">
+                                <i class="fas fa-route text-primary"></i> How to Reach
+                            </h5>
+                            <p class="card-text">{{ destination.how_to_reach }}</p>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+            
+            <!-- Sidebar -->
+            <div class="col-lg-4">
+                <!-- Map -->
+                {% if destination.latitude and destination.longitude %}
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="fas fa-map-marked-alt"></i> Location
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="map" style="height: 300px; border-radius: 8px;"></div>
+                            <p class="mt-2 mb-0 text-muted small">
+                                <i class="fas fa-map-pin"></i> 
+                                {{ destination.latitude }}, {{ destination.longitude }}
+                            </p>
+                        </div>
+                    </div>
+                {% endif %}
+                
+                <!-- Add Review Form -->
+                {% if user.is_authenticated and not user_review %}
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="fas fa-star"></i> Write a Review
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <form id="reviewForm">
+                                <div class="mb-3">
+                                    <label for="rating" class="form-label">Rating</label>
+                                    <select class="form-select" id="rating" required>
+                                        <option value="">Select Rating</option>
+                                        <option value="5">5 Stars - Excellent</option>
+                                        <option value="4">4 Stars - Very Good</option>
+                                        <option value="3">3 Stars - Good</option>
+                                        <option value="2">2 Stars - Fair</option>
+                                        <option value="1">1 Star - Poor</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="title" class="form-label">Review Title</label>
+                                    <input type="text" class="form-control" id="title" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="comment" class="form-label">Your Experience</label>
+                                    <textarea class="form-control" id="comment" rows="4" required></textarea>
+                                </div>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-paper-plane"></i> Submit Review
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                {% endif %}
+                
+                <!-- Similar Destinations -->
+                {% if similar_destinations %}
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="fas fa-compass"></i> Similar Destinations
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            {% for similar in similar_destinations %}
+                                <div class="d-flex mb-3">
+                                    {% if similar.main_image %}
+                                        <img src="{{ similar.main_image.url }}" 
+                                             class="rounded me-3" 
+                                             style="width: 60px; height: 60px; object-fit: cover;"
+                                             alt="{{ similar.name }}">
+                                    {% else %}
+                                        <div class="bg-secondary rounded me-3 d-flex align-items-center justify-content-center" 
+                                             style="width: 60px; height: 60px;">
+                                            <i class="fas fa-image text-white"></i>
+                                        </div>
+                                    {% endif %}
+                                    <div class="flex-grow-1">
+                                        <a href="{% url 'tourism:destination_detail' similar.slug %}" 
+                                           class="text-decoration-none">
+                                            <h6 class="mb-1">{{ similar.name }}</h6>
+                                        </a>
+                                        <small class="text-muted">{{ similar.city }}, {{ similar.state.name }}</small>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Reviews Section -->
+        <div class="row mt-5">
+            <div class="col-12">
+                <h3>
+                    <i class="fas fa-comments"></i> Reviews ({{ destination.total_reviews }})
+                </h3>
+                
+                {% if reviews %}
+                    {% for review in reviews %}
+                        <div class="card mb-3">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <div>
+                                        <h6 class="mb-1">{{ review.title }}</h6>
+                                        <div class="d-flex align-items-center mb-2">
+                                            <div class="me-2">
+                                                {% for i in "12345" %}
+                                                    {% if forloop.counter <= review.rating %}
+                                                        <i class="fas fa-star text-warning"></i>
+                                                    {% else %}
+                                                        <i class="far fa-star text-warning"></i>
+                                                    {% endif %}
+                                                {% endfor %}
+                                            </div>
+                                            <small class="text-muted">
+                                                by {{ review.user.username }} • {{ review.created_at|date:"M d, Y" }}
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <p class="card-text">{{ review.comment }}</p>
+                            </div>
+                        </div>
+                    {% endfor %}
+                    
+                    <!-- Pagination for reviews -->
+                    {% if is_paginated %}
+                        <nav aria-label="Reviews pagination">
+                            <ul class="pagination justify-content-center">
+                                {% if page_obj.has_previous %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a>
+                                    </li>
+                                {% endif %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+                                </li>
+                                {% if page_obj.has_next %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a>
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                    {% endif %}
+                {% else %}
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i> No reviews yet. Be the first to share your experience!
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Wishlist functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const wishlistBtn = document.getElementById('wishlistBtn');
+    if (wishlistBtn) {
+        wishlistBtn.addEventListener('click', function() {
+            const destinationId = this.dataset.destinationId;
+            
+            fetch('/api/wishlist/toggle/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                },
+                body: JSON.stringify({ destination_id: destinationId })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const icon = this.querySelector('i');
+                    if (data.added) {
+                        icon.className = 'fas fa-heart';
+                        this.innerHTML = '<i class="fas fa-heart"></i> Remove from Wishlist';
+                    } else {
+                        icon.className = 'far fa-heart';
+                        this.innerHTML = '<i class="far fa-heart"></i> Add to Wishlist';
+                    }
+                    // Show toast notification
+                    alert(data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error updating wishlist. Please try again.');
+            });
+        });
+    }
+    
+    // Review form submission
+    const reviewForm = document.getElementById('reviewForm');
+    if (reviewForm) {
+        reviewForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = {
+                destination_id: {{ destination.id }},
+                rating: document.getElementById('rating').value,
+                title: document.getElementById('title').value,
+                comment: document.getElementById('comment').value
+            };
+            
+            fetch('/api/review/add/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                },
+                body: JSON.stringify(formData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.message);
+                    location.reload();
+                } else {
+                    alert(data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error submitting review. Please try again.');
+            });
+        });
+    }
+});
+
+// Google Maps
+{% if destination.latitude and destination.longitude %}
+function initMap() {
+    const location = { 
+        lat: parseFloat({{ destination.latitude }}), 
+        lng: parseFloat({{ destination.longitude }}) 
+    };
+    
+    const map = new google.maps.Map(document.getElementById('map'), {
+        zoom: 15,
+        center: location,
+    });
+    
+    const marker = new google.maps.Marker({
+        position: location,
+        map: map,
+        title: '{{ destination.name }}'
+    });
+}
+{% endif %}
+</script>
+
+{% if destination.latitude and destination.longitude %}
+<script async defer
+    src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&callback=initMap">
+</script>
+{% endif %}
+
+{% csrf_token %}
+{% endblock %}

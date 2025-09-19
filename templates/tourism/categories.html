@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Tourism Categories - Smart Tourism India{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-5 bg-light">
+    <div class="container">
+        <div class="row">
+            <div class="col-12">
+                <h1 class="mb-5 text-center">
+                    <i class="fas fa-layer-group me-2"></i>
+                    Explore Tourism Categories
+                </h1>
+                <p class="text-center text-muted mb-5">
+                    Discover the diverse types of tourism experiences India has to offer
+                </p>
+                
+                <div class="row">
+                    {% for category in categories %}
+                        <div class="col-lg-4 col-md-6 mb-4">
+                            <div class="card h-100 shadow-sm category-card">
+                                <div class="card-body text-center">
+                                    <div class="mb-3">
+                                        <i class="{{ category.icon }} fa-3x text-primary"></i>
+                                    </div>
+                                    <h4 class="card-title">{{ category.get_name_display }}</h4>
+                                    <p class="card-text text-muted">
+                                        {{ category.description|default:"Explore amazing destinations in this category" }}
+                                    </p>
+                                    <div class="mb-3">
+                                        <span class="badge bg-info">
+                                            {{ category.destination_count }} destination{{ category.destination_count|pluralize }}
+                                        </span>
+                                    </div>
+                                    <a href="{% url 'tourism:destinations_by_category' category.name %}" 
+                                       class="btn btn-primary">
+                                        <i class="fas fa-arrow-right"></i> View Destinations
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    {% empty %}
+                        <div class="col-12">
+                            <div class="alert alert-info text-center">
+                                <h4><i class="fas fa-info-circle"></i> No categories available</h4>
+                                <p>Categories will be displayed here once they are added.</p>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.category-card {
+    transition: transform 0.3s, box-shadow 0.3s;
+    border: none;
+    border-radius: 15px;
+}
+
+.category-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+}
+
+.category-card .card-body {
+    padding: 2rem;
+}
+</style>
+{% endblock %}
