@@ -141,3 +141,105 @@ class Wishlist(models.Model):
     
     def __str__(self):
         return f"{self.user.username} - {self.destination.name}"
+
+
+class Trip(models.Model):
+    """User's trip planning"""
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    name = models.CharField(max_length=200)
+    description = models.TextField(blank=True)
+    start_date = models.DateField(null=True, blank=True)
+    end_date = models.DateField(null=True, blank=True)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"{self.user.username} - {self.name}"
+    
+    def get_total_destinations(self):
+        return self.tripdestination_set.count()
+    
+    def get_visited_count(self):
+        return self.tripdestination_set.filter(is_visited=True).count()
+    
+    def get_progress_percentage(self):
+        total = self.get_total_destinations()
+        if total == 0:
+            return 0
+        return round((self.get_visited_count() / total) * 100, 1)
+
+
+class TripDestination(models.Model):
+    """Destinations added to a trip"""
+    trip = models.ForeignKey(Trip, on_delete=models.CASCADE)
+    destination = models.ForeignKey(Destination, on_delete=models.CASCADE, null=True, blank=True)
+    
+    # For custom locations not in our database
+    custom_name = models.CharField(max_length=200, blank=True)
+    custom_address = models.CharField(max_length=500, blank=True)
+    latitude = models.DecimalField(max_digits=9, decimal_places=6)
+    longitude = models.DecimalField(max_digits=9, decimal_places=6)
+    
+    # Trip planning details
+    order = models.PositiveIntegerField(default=0)
+    planned_date = models.DateField(null=True, blank=True)
+    is_visited = models.BooleanField(default=False)
+    visited_at = models.DateTimeField(null=True, blank=True)
+    notes = models.TextField(blank=True)
+    
+    # Location details
+    place_id = models.CharField(max_length=200, blank=True)  # Google Places ID
+    place_types = models.JSONField(default=list, blank=True)  # Types from Google Places
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['trip', 'order']
+        unique_together = ['trip', 'order']
+    
+    def __str__(self):
+        name = self.destination.name if self.destination else self.custom_name
+        return f"{self.trip.name} - {name} (#{self.order})"
+    
+    def get_name(self):
+        return self.destination.name if self.destination else self.custom_name
+    
+    def get_address(self):
+        if self.destination:
+            return f"{self.destination.city}, {self.destination.state.name}"
+        return self.custom_address
+
+
+class PlaceWeatherCache(models.Model):
+    """Cache weather information for places"""
+    latitude = models.DecimalField(max_digits=9, decimal_places=6)
+    longitude = models.DecimalField(max_digits=9, decimal_places=6)
+    
+    # Weather data
+    temperature = models.FloatField()
+    description = models.CharField(max_length=200)
+    humidity = models.IntegerField()
+    wind_speed = models.FloatField()
+    icon = models.CharField(max_length=10)
+    
+    # Cache management
+    cached_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        indexes = [
+            models.Index(fields=['latitude', 'longitude']),
+            models.Index(fields=['cached_at']),
+        ]
+    
+    def __str__(self):
+        return f"Weather at {self.latitude}, {self.longitude} - {self.temperature}°C"
+    
+    def is_fresh(self):
+        """Check if weather data is less than 1 hour old"""
+        from django.utils import timezone
+        return (timezone.now() - self.cached_at).seconds < 3600

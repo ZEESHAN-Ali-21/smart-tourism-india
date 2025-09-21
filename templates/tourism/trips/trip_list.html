@@ -1,0 +1,154 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}My Trips - Smart Tourism India{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-5 bg-light">
+    <div class="container">
+        <div class="row">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h1>
+                        <i class="fas fa-suitcase-rolling me-2 text-primary"></i>
+                        My Trips
+                    </h1>
+                    <a href="{% url 'tourism:create_trip' %}" class="btn btn-primary btn-lg">
+                        <i class="fas fa-plus"></i> Create New Trip
+                    </a>
+                </div>
+                
+                <!-- Trip Cards -->
+                <div class="row">
+                    {% for trip in trips %}
+                        <div class="col-lg-4 col-md-6 mb-4">
+                            <div class="card h-100 shadow-sm trip-card">
+                                <div class="card-header bg-primary text-white">
+                                    <h5 class="mb-0">
+                                        <i class="fas fa-route me-2"></i>
+                                        {{ trip.name }}
+                                    </h5>
+                                </div>
+                                <div class="card-body d-flex flex-column">
+                                    <p class="card-text">{{ trip.description|default:"No description provided"|truncatewords:20 }}</p>
+                                    
+                                    <!-- Trip Statistics -->
+                                    <div class="row text-center mb-3">
+                                        <div class="col-4">
+                                            <h6 class="text-primary mb-0">{{ trip.get_total_destinations }}</h6>
+                                            <small class="text-muted">Destinations</small>
+                                        </div>
+                                        <div class="col-4">
+                                            <h6 class="text-success mb-0">{{ trip.get_visited_count }}</h6>
+                                            <small class="text-muted">Visited</small>
+                                        </div>
+                                        <div class="col-4">
+                                            <h6 class="text-info mb-0">{{ trip.get_progress_percentage }}%</h6>
+                                            <small class="text-muted">Progress</small>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Progress Bar -->
+                                    <div class="progress mb-3" style="height: 8px;">
+                                        <div class="progress-bar bg-success" 
+                                             style="width: {{ trip.get_progress_percentage }}%"></div>
+                                    </div>
+                                    
+                                    <!-- Dates -->
+                                    {% if trip.start_date or trip.end_date %}
+                                        <div class="mb-3">
+                                            <small class="text-muted">
+                                                <i class="fas fa-calendar-alt"></i>
+                                                {% if trip.start_date %}
+                                                    {{ trip.start_date|date:"M d, Y" }}
+                                                {% endif %}
+                                                {% if trip.start_date and trip.end_date %}
+                                                    - {{ trip.end_date|date:"M d, Y" }}
+                                                {% elif trip.end_date %}
+                                                    Until {{ trip.end_date|date:"M d, Y" }}
+                                                {% endif %}
+                                            </small>
+                                        </div>
+                                    {% endif %}
+                                    
+                                    <!-- Action Buttons -->
+                                    <div class="mt-auto">
+                                        <div class="btn-group w-100" role="group">
+                                            <a href="{% url 'tourism:trip_planner' trip.pk %}" 
+                                               class="btn btn-primary">
+                                                <i class="fas fa-map"></i> Plan
+                                            </a>
+                                            <a href="{% url 'tourism:trip_detail' trip.pk %}" 
+                                               class="btn btn-outline-primary">
+                                                <i class="fas fa-eye"></i> View
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="card-footer text-muted">
+                                    <small>
+                                        <i class="fas fa-clock"></i>
+                                        Created {{ trip.created_at|timesince }} ago
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    {% empty %}
+                        <div class="col-12">
+                            <div class="text-center py-5">
+                                <i class="fas fa-map-marked-alt fa-5x text-muted mb-4"></i>
+                                <h3 class="text-muted">No trips yet!</h3>
+                                <p class="text-muted mb-4">Start planning your first trip to explore amazing destinations.</p>
+                                <a href="{% url 'tourism:create_trip' %}" class="btn btn-primary btn-lg">
+                                    <i class="fas fa-plus"></i> Create Your First Trip
+                                </a>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+                
+                <!-- Pagination -->
+                {% if is_paginated %}
+                    <nav aria-label="Trips pagination" class="mt-4">
+                        <ul class="pagination justify-content-center">
+                            {% if page_obj.has_previous %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page=1">First</a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a>
+                                </li>
+                            {% endif %}
+                            
+                            <li class="page-item active">
+                                <span class="page-link">{{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+                            </li>
+                            
+                            {% if page_obj.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">Last</a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.trip-card {
+    transition: transform 0.3s, box-shadow 0.3s;
+    border: none;
+}
+
+.trip-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15) !important;
+}
+</style>
+{% endblock %}

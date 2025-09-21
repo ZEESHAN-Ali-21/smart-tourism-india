@@ -1,5 +1,5 @@
 from django import forms
-from .models import Review
+from .models import Review, Trip
 
 
 class ReviewForm(forms.ModelForm):
@@ -46,3 +46,16 @@ class SearchForm(forms.Form):
             'id': 'searchInput'
         })
     )
+
+
+class TripForm(forms.ModelForm):
+    """Form for creating/editing a trip"""
+    class Meta:
+        model = Trip
+        fields = ['name', 'description', 'start_date', 'end_date']
+        widgets = {
+            'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'My Trip'}),
+            'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Trip notes'}),
+            'start_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'end_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+        }

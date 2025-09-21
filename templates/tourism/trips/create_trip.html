@@ -1,0 +1,136 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Create New Trip - Smart Tourism India{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-5 bg-light">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-6 col-md-8">
+                <div class="card shadow-lg border-0">
+                    <div class="card-header bg-primary text-white text-center">
+                        <h3 class="mb-0">
+                            <i class="fas fa-plus-circle me-2"></i>
+                            Create New Trip
+                        </h3>
+                        <p class="mb-0">Start planning your next adventure!</p>
+                    </div>
+                    <div class="card-body p-5">
+                        <form method="post">
+                            {% csrf_token %}
+                            
+                            <div class="mb-4">
+                                <label for="{{ form.name.id_for_label }}" class="form-label">
+                                    <i class="fas fa-route text-primary"></i> Trip Name
+                                </label>
+                                {{ form.name }}
+                                {% if form.name.errors %}
+                                    <div class="text-danger mt-1">
+                                        {{ form.name.errors }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="mb-4">
+                                <label for="{{ form.description.id_for_label }}" class="form-label">
+                                    <i class="fas fa-sticky-note text-primary"></i> Description
+                                </label>
+                                {{ form.description }}
+                                {% if form.description.errors %}
+                                    <div class="text-danger mt-1">
+                                        {{ form.description.errors }}
+                                    </div>
+                                {% endif %}
+                                <small class="form-text text-muted">
+                                    Optional: Add notes about your trip
+                                </small>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-4">
+                                        <label for="{{ form.start_date.id_for_label }}" class="form-label">
+                                            <i class="fas fa-calendar-alt text-primary"></i> Start Date
+                                        </label>
+                                        {{ form.start_date }}
+                                        {% if form.start_date.errors %}
+                                            <div class="text-danger mt-1">
+                                                {{ form.start_date.errors }}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-4">
+                                        <label for="{{ form.end_date.id_for_label }}" class="form-label">
+                                            <i class="fas fa-calendar-check text-primary"></i> End Date
+                                        </label>
+                                        {{ form.end_date }}
+                                        {% if form.end_date.errors %}
+                                            <div class="text-danger mt-1">
+                                                {{ form.end_date.errors }}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="d-grid gap-2">
+                                <button type="submit" class="btn btn-primary btn-lg">
+                                    <i class="fas fa-magic"></i> Create Trip & Start Planning
+                                </button>
+                                <a href="{% url 'tourism:trip_list' %}" class="btn btn-outline-secondary">
+                                    <i class="fas fa-arrow-left"></i> Back to My Trips
+                                </a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                
+                <!-- Tips Section -->
+                <div class="card mt-4 border-0 shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title text-primary">
+                            <i class="fas fa-lightbulb"></i> Trip Planning Tips
+                        </h5>
+                        <ul class="list-unstyled mb-0">
+                            <li class="mb-2">
+                                <i class="fas fa-check text-success me-2"></i>
+                                Give your trip a memorable name
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-check text-success me-2"></i>
+                                Add dates to help plan your itinerary
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-check text-success me-2"></i>
+                                You can add destinations after creating the trip
+                            </li>
+                            <li class="mb-0">
+                                <i class="fas fa-check text-success me-2"></i>
+                                Use our interactive map to plan routes
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.card {
+    border-radius: 15px;
+}
+
+.card-header {
+    border-radius: 15px 15px 0 0 !important;
+}
+
+.form-control:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+</style>
+{% endblock %}
