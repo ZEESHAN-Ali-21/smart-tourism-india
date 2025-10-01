@@ -2,6 +2,9 @@ from django.contrib import admin
 from django.utils.html import format_html
 from django.urls import reverse
 from django.utils.safestring import mark_safe
+from django.contrib import messages
+from django.core.files.base import ContentFile
+import requests
 from .models import Category, State, Destination, Review, Wishlist
 
 
@@ -108,6 +111,70 @@ class DestinationAdmin(admin.ModelAdmin):
     ]
     
     inlines = [ReviewInline]
+    actions = ['add_sample_images', 'mark_as_featured', 'mark_as_not_featured']
+    
+    def add_sample_images(self, request, queryset):
+        """Add sample images to destinations that don't have images"""
+        sample_images = {
+            'cultural': 'https://images.unsplash.com/photo-1564507592333-c60657eea523?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+            'historical': 'https://images.unsplash.com/photo-1587474260584-136574528ed5?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+            'religious': 'https://images.unsplash.com/photo-1609920658906-8223bd289001?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+            'adventure': 'https://images.unsplash.com/photo-1551524164-6cf777e44b37?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+            'wildlife': 'https://images.unsplash.com/photo-1549366021-9f761d040a94?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+            'beach': 'https://images.unsplash.com/photo-1559827260-dc66d52bef19?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+            'mountain': 'https://images.unsplash.com/photo-1464822759844-d150baec4494?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+            'eco': 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+        }
+        
+        success_count = 0
+        for destination in queryset.filter(main_image=''):
+            try:
+                first_category = destination.categories.first()
+                category_name = first_category.name if first_category else 'cultural'
+                
+                if category_name not in sample_images:
+                    category_name = 'cultural'
+                
+                image_url = sample_images[category_name]
+                response = requests.get(image_url)
+                
+                if response.status_code == 200:
+                    filename = f"{destination.slug}_main.jpg"
+                    destination.main_image.save(
+                        filename,
+                        ContentFile(response.content),
+                        save=True
+                    )
+                    success_count += 1
+            except Exception:
+                continue
+        
+        self.message_user(
+            request,
+            f'Successfully added images to {success_count} destinations.',
+            messages.SUCCESS
+        )
+    add_sample_images.short_description = 'Add sample images to selected destinations'
+    
+    def mark_as_featured(self, request, queryset):
+        """Mark selected destinations as featured"""
+        updated = queryset.update(featured=True)
+        self.message_user(
+            request,
+            f'{updated} destinations were successfully marked as featured.',
+            messages.SUCCESS
+        )
+    mark_as_featured.short_description = 'Mark selected destinations as featured'
+    
+    def mark_as_not_featured(self, request, queryset):
+        """Remove featured status from selected destinations"""
+        updated = queryset.update(featured=False)
+        self.message_user(
+            request,
+            f'{updated} destinations were successfully unmarked as featured.',
+            messages.SUCCESS
+        )
+    mark_as_not_featured.short_description = 'Remove featured status from selected destinations'
     
     def image_preview(self, obj):
         if obj.main_image:

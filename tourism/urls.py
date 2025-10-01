@@ -16,6 +16,9 @@ urlpatterns = [
     # Categories
     path('categories/', views.CategoriesView.as_view(), name='categories'),
     
+    # Interactive Maps
+    path('maps/', views.InteractiveMapsView.as_view(), name='interactive_maps'),
+    
     # Search
     path('search/', views.SearchView.as_view(), name='search'),
     
@@ -31,6 +34,7 @@ urlpatterns = [
     # Trip Planning
     path('trips/', trip_views.TripListView.as_view(), name='trip_list'),
     path('trips/create/', trip_views.create_trip, name='create_trip'),
+    path('trips/clear/', trip_views.clear_all_trips, name='clear_all_trips'),
     path('trips/<int:pk>/', trip_views.TripDetailView.as_view(), name='trip_detail'),
     path('trips/<int:pk>/planner/', trip_views.TripPlannerView.as_view(), name='trip_planner'),
     

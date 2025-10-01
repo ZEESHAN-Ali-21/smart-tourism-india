@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load destination_extras %}
 
 {% block title %}Smart Tourism India - Discover Incredible India{% endblock %}
 
@@ -7,36 +8,38 @@
 <!-- Hero Section -->
 <section class="hero-section">
     <div class="container">
-        <div class="row align-items-center">
+        <div class="row align-items-center min-vh-100">
             <div class="col-lg-8">
                 <div class="hero-content">
-                    <h1 class="hero-title">Discover <span class="text-gradient">Incredible India</span></h1>
+                    <h1 class="hero-title">
+                        Discover <span class="text-gradient">Incredible India</span>
+                    </h1>
                     <p class="hero-subtitle">
-                        Explore India's rich heritage, diverse cultures, and breathtaking destinations with our AI-powered tourism platform
+                        Explore India's rich heritage, diverse cultures, and breathtaking destinations with our smart tourism platform
                     </p>
                     <div class="hero-actions">
                         <a href="{% url 'tourism:destinations' %}" class="btn btn-primary btn-lg me-3">
                             <i class="fas fa-compass me-2"></i>
                             Explore Destinations
                         </a>
-                        <a href="{% url 'chatbot:chat' %}" class="btn btn-outline-light btn-lg">
-                            <i class="fas fa-robot me-2"></i>
-                            AI Assistant
+                        <a href="{% url 'tourism:interactive_maps' %}" class="btn btn-outline-primary btn-lg">
+                            <i class="fas fa-globe me-2"></i>
+                            Interactive Maps
                         </a>
                     </div>
                 </div>
             </div>
             <div class="col-lg-4">
-                <div class="hero-stats">
-                    <div class="stat-card">
+                <div class="stats-grid">
+                    <div class="stat-item">
                         <h3 class="stat-number">{{ total_destinations }}+</h3>
                         <p class="stat-label">Destinations</p>
                     </div>
-                    <div class="stat-card">
+                    <div class="stat-item">
                         <h3 class="stat-number">{{ total_states }}+</h3>
                         <p class="stat-label">States Covered</p>
                     </div>
-                    <div class="stat-card">
+                    <div class="stat-item">
                         <h3 class="stat-number">8</h3>
                         <p class="stat-label">Categories</p>
                     </div>
@@ -47,16 +50,22 @@
 </section>
 
 <!-- Search Section -->
-<section class="py-5 bg-light">
+<section class="py-5" style="background: var(--light-color);">
     <div class="container">
         <div class="row justify-content-center">
             <div class="col-lg-8">
                 <div class="search-container">
-                    <form method="GET" action="{% url 'tourism:search' %}" id="searchForm">
-                        <input type="text" name="q" class="search-bar" placeholder="Search destinations, cities, states..." id="searchInput">
+                    <form method="GET" action="{% url 'tourism:search' %}" id="searchForm" class="position-relative">
+                        <input type="text" name="q" class="search-bar" placeholder="Search destinations, cities, states..." id="searchInput" autocomplete="off">
                         <button type="submit" class="search-btn">
                             <i class="fas fa-search"></i>
                         </button>
+                        <!-- Search Results Dropdown -->
+                        <div id="searchResults" class="search-results-dropdown" style="display: none;">
+                            <div class="search-results-loading">
+                                <i class="fas fa-spinner fa-spin"></i> Searching...
+                            </div>
+                        </div>
                     </form>
                 </div>
             </div>
@@ -65,96 +74,39 @@
 </section>
 
 <!-- Featured Destinations -->
-<section class="section-padding">
+<section class="section-padding section-nature">
     <div class="container">
         <div class="text-center mb-5">
-            <h2 class="section-title">Featured Destinations</h2>
+            <h2 class="section-title" style="color: var(--secondary-color);">Featured Destinations</h2>
             <p class="section-subtitle">Discover India's most iconic and breathtaking places</p>
         </div>
         
         <div class="row">
             {% for destination in featured_destinations %}
-            <div class="col-lg-4 col-md-6 mb-4">
-                <div class="card destination-card h-100 fade-in">
-                    <div class="position-relative">
-                        {% if destination.main_image %}
-                        <img src="{{ destination.main_image.url }}" class="card-img-top" alt="{{ destination.name }}">
-                        {% else %}
-                        <div class="card-img-top bg-gradient d-flex align-items-center justify-content-center" style="height: 250px;">
-                            <i class="fas fa-mountain fa-3x text-white"></i>
-                        </div>
-                        {% endif %}
-                        
-                        {% if user.is_authenticated %}
-                        <button class="wishlist-btn" data-destination-id="{{ destination.id }}">
-                            <i class="far fa-heart"></i>
-                        </button>
-                        {% endif %}
-                        
-                        <div class="category-tags">
-                            {% for category in destination.categories.all %}
-                            <span class="category-tag">{{ category.get_name_display }}</span>
-                            {% endfor %}
-                        </div>
-                    </div>
-                    
-                    <div class="card-body">
-                        <h5 class="card-title">{{ destination.name }}</h5>
-                        <p class="location-info">
-                            <i class="fas fa-map-marker-alt me-1"></i>
-                            {{ destination.city }}, {{ destination.state.name }}
-                        </p>
-                        
-                        <div class="rating-display">
-                            <div class="star-rating">
-                                {% with destination.average_rating as rating %}
-                                {% for i in "12345" %}
-                                    {% if forloop.counter <= rating %}
-                                    <i class="fas fa-star"></i>
-                                    {% else %}
-                                    <i class="far fa-star"></i>
-                                    {% endif %}
-                                {% endfor %}
-                                {% endwith %}
-                            </div>
-                            <span class="rating-count">({{ destination.total_reviews }} reviews)</span>
-                        </div>
-                        
-                        <p class="card-text">{{ destination.short_description|truncatewords:15 }}</p>
-                        
-                        <div class="d-flex justify-content-between align-items-center">
-                            <a href="{% url 'tourism:destination_detail' destination.slug %}" class="btn btn-primary">
-                                <i class="fas fa-info-circle me-1"></i> Details
-                            </a>
-                            {% if destination.latitude and destination.longitude %}
-                            <button class="btn btn-outline-secondary btn-sm" onclick="focusOnDestination({
-                                name: '{{ destination.name|escapejs }}',
-                                latitude: '{{ destination.latitude }}',
-                                longitude: '{{ destination.longitude }}',
-                                slug: '{{ destination.slug }}'
-                            })">
-                                <i class="fas fa-map-marker-alt"></i>
-                            </button>
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
-            </div>
+                {% destination_card destination show_description=True card_class="fade-in" %}
             {% empty %}
             <div class="col-12 text-center">
                 <p class="text-muted">No featured destinations available at the moment.</p>
             </div>
             {% endfor %}
         </div>
+        
+        <!-- Show More Featured Button -->
+        <div class="text-center mt-4">
+            <a href="{% url 'tourism:destinations' %}?featured=1" class="btn btn-outline-primary btn-lg">
+                <i class="fas fa-star me-2"></i>
+                View All Featured Destinations
+            </a>
+        </div>
     </div>
 </section>
 
 <!-- Categories Section -->
-<section class="section-padding bg-light">
+<section class="section-padding section-transparent">
     <div class="container">
         <div class="text-center mb-5">
-            <h2 class="section-title">Explore by Category</h2>
-            <p class="section-subtitle">Find destinations that match your interests</p>
+            <h2 class="section-title section-title-transparent">Explore by Category</h2>
+            <p class="section-subtitle section-subtitle-transparent">Find destinations that match your interests</p>
         </div>
         
         <div class="row">
@@ -176,10 +128,10 @@
 </section>
 
 <!-- Map Section -->
-<section class="section-padding">
+<section class="section-padding section-sunset">
     <div class="container">
         <div class="text-center mb-5">
-            <h2 class="section-title">Explore India Map</h2>
+            <h2 class="section-title" style="color: var(--accent-orange);">Explore India Map</h2>
             <p class="section-subtitle">Interactive map showing all destinations</p>
         </div>
         
@@ -211,32 +163,264 @@
 {% block extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Initialize featured destinations on map when loaded
-    if (typeof showDestinationsOnMap === 'function') {
+    // Initialize Mapbox GL JS map if element exists
+    if (document.getElementById('map')) {
+        // Initialize Mapbox map with 3D features
+        const map = mapboxUtils.initMap('map', {
+            center: [78.9629, 20.5937], // Center of India [lng, lat]
+            zoom: 4.5,
+            pitch: 45, // 3D angle
+            bearing: 0
+        });
+        
+        // Prepare destinations data for map
         const destinations = [
             {% for destination in featured_destinations %}
             {% if destination.latitude and destination.longitude %}
             {
                 name: "{{ destination.name|escapejs }}",
-                latitude: "{{ destination.latitude }}",
-                longitude: "{{ destination.longitude }}",
+                latitude: {{ destination.latitude }},
+                longitude: {{ destination.longitude }},
                 city: "{{ destination.city|escapejs }}",
-                state: "{{ destination.state.name|escapejs }}",
-                description: "{{ destination.short_description|escapejs }}",
-                rating: {{ destination.average_rating }},
+                state: {name: "{{ destination.state.name|escapejs }}"},
+                short_description: "{{ destination.short_description|escapejs }}",
+                description: "{{ destination.description|escapejs }}",
+                average_rating: {{ destination.average_rating|default:0 }},
                 slug: "{{ destination.slug }}",
-                categories: [{% for cat in destination.categories.all %}"{{ cat.name }}"{% if not forloop.last %},{% endif %}{% endfor %}]
+                categories: [{% for cat in destination.categories.all %}{name: "{{ cat.name }}"}{% if not forloop.last %},{% endif %}{% endfor %}]
             }{% if not forloop.last %},{% endif %}
             {% endif %}
             {% endfor %}
         ];
         
-        setTimeout(() => {
-            if (window.map) {
-                showDestinationsOnMap(destinations);
-            }
-        }, 1000);
+        // Show destinations on map with 3D markers
+        if (destinations.length > 0) {
+            mapboxUtils.showDestinations(destinations);
+        }
     }
+    
+    console.log('Home page loaded successfully');
+    
+    // Initialize search functionality
+    initializeSearch();
 });
+
+// Search functionality
+let searchTimeout;
+let currentSearchResults = [];
+
+function initializeSearch() {
+    const searchInput = document.getElementById('searchInput');
+    const searchResults = document.getElementById('searchResults');
+    const searchForm = document.getElementById('searchForm');
+    
+    if (!searchInput || !searchResults) return;
+    
+    // Search on input with debounce
+    searchInput.addEventListener('input', function(e) {
+        const query = e.target.value.trim();
+        
+        if (searchTimeout) {
+            clearTimeout(searchTimeout);
+        }
+        
+        if (query.length < 2) {
+            hideSearchResults();
+            return;
+        }
+        
+        searchTimeout = setTimeout(() => {
+            performSearch(query);
+        }, 300);
+    });
+    
+    // Handle form submission
+    searchForm.addEventListener('submit', function(e) {
+        const query = searchInput.value.trim();
+        if (!query) {
+            e.preventDefault();
+            return;
+        }
+        // Allow form to submit normally to Django search view
+    });
+    
+    // Hide results when clicking outside
+    document.addEventListener('click', function(e) {
+        if (!searchForm.contains(e.target)) {
+            hideSearchResults();
+        }
+    });
+}
+
+function performSearch(query) {
+    const searchResults = document.getElementById('searchResults');
+    if (!searchResults) return;
+    
+    showSearchLoading();
+    
+    // Search in destinations first (local data)
+    const destinations = [
+        {% if featured_destinations %}
+        {% for destination in featured_destinations %}
+        {% if destination.name and destination.city and destination.state %}
+        {
+            name: "{{ destination.name|escapejs }}",
+            city: "{{ destination.city|escapejs }}",
+            state: "{{ destination.state.name|escapejs }}",
+            slug: "{{ destination.slug|escapejs }}",
+            rating: {{ destination.average_rating|default:0 }},
+            type: 'destination'
+        }{% if not forloop.last %},{% endif %}
+        {% endif %}
+        {% endfor %}
+        {% endif %}
+    ];
+    
+    // Filter local destinations
+    const localResults = destinations.filter(dest => 
+        dest && dest.name && (
+            dest.name.toLowerCase().includes(query.toLowerCase()) ||
+            (dest.city && dest.city.toLowerCase().includes(query.toLowerCase())) ||
+            (dest.state && dest.state.toLowerCase().includes(query.toLowerCase()))
+        )
+    ).slice(0, 5);
+    
+    // Search using Mapbox Geocoding API if available
+    if (window.MAPBOX_CONFIG && window.MAPBOX_CONFIG.accessToken) {
+        fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?country=IN&limit=3&access_token=${mapboxgl.accessToken}`)
+            .then(response => response.json())
+            .then(data => {
+                const mapboxResults = data.features ? data.features.map(feature => ({
+                    name: feature.place_name,
+                    latitude: feature.center[1],
+                    longitude: feature.center[0],
+                    city: feature.context ? feature.context.find(c => c.id.includes('place'))?.text : '',
+                    state: feature.context ? feature.context.find(c => c.id.includes('region'))?.text : '',
+                    country: 'India',
+                    type: 'location'
+                })) : [];
+                
+                const combinedResults = [...localResults, ...mapboxResults.slice(0, 3)];
+                displaySearchResults(combinedResults, query);
+            })
+            .catch(() => {
+                displaySearchResults(localResults, query);
+            });
+    } else {
+        displaySearchResults(localResults, query);
+    }
+}
+
+function showSearchLoading() {
+    const searchResults = document.getElementById('searchResults');
+    if (!searchResults) return;
+    
+    searchResults.innerHTML = `
+        <div class="search-results-loading">
+            <i class="fas fa-spinner fa-spin"></i> Searching...
+        </div>
+    `;
+    searchResults.style.display = 'block';
+}
+
+function displaySearchResults(results, query) {
+    const searchResults = document.getElementById('searchResults');
+    if (!searchResults) return;
+    
+    currentSearchResults = results;
+    
+    if (results.length === 0) {
+        searchResults.innerHTML = `
+            <div class="search-no-results">
+                <i class="fas fa-search mb-2"></i>
+                <p class="mb-2">No results found for "${query}"</p>
+                <div class="search-suggestions">
+                    <span class="search-suggestion" onclick="searchSuggestion('Taj Mahal')">Taj Mahal</span>
+                    <span class="search-suggestion" onclick="searchSuggestion('Kerala')">Kerala</span>
+                    <span class="search-suggestion" onclick="searchSuggestion('Goa')">Goa</span>
+                    <span class="search-suggestion" onclick="searchSuggestion('Rajasthan')">Rajasthan</span>
+                </div>
+            </div>
+        `;
+    } else {
+        let html = '';
+        results.forEach((result, index) => {
+            const icon = result.type === 'destination' ? 'fas fa-mountain' : 'fas fa-map-marker-alt';
+            const subtitle = result.city && result.state ? `${result.city}, ${result.state}` : 
+                            result.state ? result.state : 
+                            result.country ? result.country : 'Location';
+            
+            html += `
+                <div class="search-result-item" onclick="selectSearchResult(${index})">
+                    <div class="search-result-icon">
+                        <i class="${icon}"></i>
+                    </div>
+                    <div class="search-result-content">
+                        <div class="search-result-title">${result.name}</div>
+                        <p class="search-result-subtitle">${subtitle}</p>
+                        ${result.rating ? `<small class="text-warning">⭐ ${result.rating.toFixed(1)}</small>` : ''}
+                    </div>
+                </div>
+            `;
+        });
+        searchResults.innerHTML = html;
+    }
+    
+    searchResults.style.display = 'block';
+}
+
+function selectSearchResult(index) {
+    const result = currentSearchResults[index];
+    if (!result) return;
+    
+    if (result.type === 'destination' && result.slug) {
+        // Navigate to destination detail page
+        window.location.href = `/destinations/${result.slug}/`;
+    } else if (result.latitude && result.longitude) {
+        // Update search input and focus on map
+        document.getElementById('searchInput').value = result.name;
+        hideSearchResults();
+        
+        // Focus on location on map if available
+        if (mapboxUtils && mapboxUtils.map) {
+            mapboxUtils.focusOnDestination({
+                name: result.name,
+                latitude: result.latitude,
+                longitude: result.longitude,
+                city: result.city,
+                state: result.state
+            });
+            
+            // Add a temporary marker
+            const tempMarker = mapboxUtils.addMarker({
+                name: result.name,
+                latitude: result.latitude,
+                longitude: result.longitude,
+                city: result.city || '',
+                state: {name: result.state || ''},
+                short_description: `Search result for ${result.name}`,
+                average_rating: result.rating || 0,
+                slug: result.slug || '#'
+            });
+        }
+    } else {
+        // Fallback: search on the site
+        document.getElementById('searchInput').value = result.name;
+        document.getElementById('searchForm').submit();
+    }
+}
+
+function searchSuggestion(suggestion) {
+    document.getElementById('searchInput').value = suggestion;
+    performSearch(suggestion);
+}
+
+function hideSearchResults() {
+    const searchResults = document.getElementById('searchResults');
+    if (searchResults) {
+        searchResults.style.display = 'none';
+    }
+    currentSearchResults = [];
+}
 </script>
 {% endblock %}

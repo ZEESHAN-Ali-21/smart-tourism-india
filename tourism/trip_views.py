@@ -53,7 +53,6 @@ class TripDetailView(LoginRequiredMixin, DetailView):
         
         context.update({
             'trip_destinations': destinations,
-            'google_maps_api_key': settings.GOOGLE_MAPS_API_KEY,
             'weather_api_key': settings.OPENWEATHER_API_KEY,
         })
         return context
@@ -96,7 +95,6 @@ class TripPlannerView(LoginRequiredMixin, DetailView):
         context.update({
             'trip_destinations': trip_destinations,
             'destinations_json': json.dumps(destinations_data),
-            'google_maps_api_key': settings.GOOGLE_MAPS_API_KEY,
             'weather_api_key': settings.OPENWEATHER_API_KEY,
         })
         return context
@@ -260,6 +258,41 @@ def reorder_destinations(request):
             'success': False,
             'message': f'Error reordering destinations: {str(e)}'
         }, status=400)
+
+
+@login_required
+def clear_all_trips(request):
+    """Clear all user trips by deactivating them"""
+    try:
+        print(f"Clear trips called by user: {request.user}")
+        
+        # Check current active trips before clearing
+        current_trips = Trip.objects.filter(
+            user=request.user, 
+            is_active=True
+        )
+        current_count = current_trips.count()
+        print(f"Found {current_count} active trips to clear")
+        
+        # Set all user trips to inactive instead of deleting them
+        trips_count = Trip.objects.filter(
+            user=request.user, 
+            is_active=True
+        ).update(is_active=False)
+        
+        print(f"Updated {trips_count} trips to inactive")
+        
+        if trips_count > 0:
+            messages.success(request, f'Successfully cleared {trips_count} trip(s)!')
+        else:
+            messages.info(request, 'No trips to clear.')
+        
+        return redirect('tourism:trip_list')
+    
+    except Exception as e:
+        print(f"Error clearing trips: {str(e)}")
+        messages.error(request, f'Error clearing trips: {str(e)}')
+        return redirect('tourism:trip_list')
 
 
 def get_weather_for_location(request):

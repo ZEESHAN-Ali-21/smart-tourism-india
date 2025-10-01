@@ -310,141 +310,221 @@
 {% endblock %}
 
 {% block extra_js %}
+<!-- Mapbox GL JS 3D Trip Planner -->
+<style>
+/* Enhanced 3D Trip Planner Styles */
+.destination-marker-visited {
+    background: linear-gradient(45deg, #e74c3c, #c0392b);
+    animation: visited-pulse 2s infinite;
+}
+
+.destination-marker-unvisited {
+    background: linear-gradient(45deg, #2ecc71, #27ae60);
+    animation: unvisited-bounce 2s infinite;
+}
+
+@keyframes visited-pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}
+
+@keyframes unvisited-bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-5px); }
+}
+
+.route-line {
+    stroke: #3498db;
+    stroke-width: 4;
+    stroke-opacity: 0.8;
+    animation: route-flow 3s linear infinite;
+}
+
+@keyframes route-flow {
+    0% { stroke-dasharray: 0 20; }
+    100% { stroke-dasharray: 20 0; }
+}
+</style>
+
 <script>
-// Global variables
+// Global variables for Mapbox 3D Trip Planner
 let map;
-let markers = [];
-let directionsService;
-let directionsRenderer;
+let tripMarkers = [];
 let currentUserLocation = null;
-let nearbyPlacesService;
 let currentNearbyLat, currentNearbyLng;
 
 // Trip data from Django
 const tripDestinations = {{ destinations_json|safe }};
 const tripId = {{ trip.id }};
 
-// Initialize map
+// Initialize 3D Mapbox map
 function initMap() {
-    // Initialize map centered on India
-    map = new google.maps.Map(document.getElementById('map'), {
+    // Initialize Mapbox 3D map
+    map = mapboxUtils.initMap('map', {
+        center: [78.9629, 20.5937], // Center of India [lng, lat]
         zoom: 5,
-        center: { lat: 20.5937, lng: 78.9629 }, // India center
-        styles: [
-            {
-                featureType: "poi",
-                elementType: "labels",
-                stylers: [{ visibility: "off" }]
-            }
-        ]
+        pitch: 45, // 3D perspective
+        bearing: 0
     });
     
-    // Initialize services
-    directionsService = new google.maps.DirectionsService();
-    directionsRenderer = new google.maps.DirectionsRenderer({
-        draggable: true,
-        suppressMarkers: false
+    // Wait for map to load
+    map.on('load', () => {
+        // Load existing trip destinations
+        loadDestinationMarkers();
+        
+        // Get user's current location
+        getCurrentLocation();
+        
+        // Add route if multiple destinations exist
+        if (tripDestinations.length > 1) {
+            showRouteOnMap();
+        }
     });
-    directionsRenderer.setMap(map);
-    
-    nearbyPlacesService = new google.maps.places.PlacesService(map);
-    
-    // Load existing destinations
-    loadDestinationMarkers();
-    
-    // Get user's current location
-    getCurrentLocation();
-    
-    // Setup autocomplete
-    setupAutocomplete();
 }
 
-// Load destination markers on map
+// Load 3D destination markers on map
 function loadDestinationMarkers() {
-    // Clear existing markers
-    markers.forEach(marker => marker.setMap(null));
-    markers = [];
+    // Clear existing trip markers
+    tripMarkers.forEach(marker => marker.remove());
+    tripMarkers = [];
     
     tripDestinations.forEach((destination, index) => {
-        const position = { lat: destination.latitude, lng: destination.longitude };
+        const coordinates = [destination.longitude, destination.latitude];
         
-        // Create marker with appropriate color and animation
-        const marker = new google.maps.Marker({
-            position: position,
-            map: map,
-            title: destination.name,
-            label: destination.order.toString(),
-            icon: {
-                url: destination.is_visited 
-                    ? 'http://maps.google.com/mapfiles/ms/icons/red-dot.png'
-                    : 'http://maps.google.com/mapfiles/ms/icons/green-dot.png',
-                scaledSize: new google.maps.Size(40, 40)
-            },
-            animation: destination.is_visited ? null : google.maps.Animation.BOUNCE
-        });
+        // Create custom marker element with 3D styling
+        const markerEl = document.createElement('div');
+        markerEl.className = `custom-trip-marker ${
+            destination.is_visited ? 'destination-marker-visited' : 'destination-marker-unvisited'
+        }`;
+        markerEl.style.cssText = `
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 3px solid white;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            color: white;
+            font-weight: bold;
+            position: relative;
+        `;
+        markerEl.innerHTML = destination.order;
         
-        // Add click listener
-        marker.addListener('click', () => {
-            showDestinationInfo(destination);
-        });
-        
-        // Add visited destinations with circle highlight
+        // Add visited indicator
         if (destination.is_visited) {
-            const circle = new google.maps.Circle({
-                strokeColor: '#FF0000',
-                strokeOpacity: 0.8,
-                strokeWeight: 2,
-                fillColor: '#FF0000',
-                fillOpacity: 0.2,
-                map: map,
-                center: position,
-                radius: 1000 // 1km radius
-            });
+            const checkmark = document.createElement('div');
+            checkmark.innerHTML = '✓';
+            checkmark.style.cssText = `
+                position: absolute;
+                top: -5px;
+                right: -5px;
+                background: #2ecc71;
+                border-radius: 50%;
+                width: 20px;
+                height: 20px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 12px;
+                box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            `;
+            markerEl.appendChild(checkmark);
         }
         
-        markers.push(marker);
-    });
-    
-    // Fit bounds to show all destinations
-    if (tripDestinations.length > 0) {
-        const bounds = new google.maps.LatLngBounds();
-        tripDestinations.forEach(dest => {
-            bounds.extend({ lat: dest.latitude, lng: dest.longitude });
-        });
-        map.fitBounds(bounds);
-    }
-}
-
-// Show destination information
-function showDestinationInfo(destination) {
-    const infoWindow = new google.maps.InfoWindow({
-        content: `
-            <div style="padding: 10px; max-width: 200px;">
-                <h6>${destination.name}</h6>
-                <p class="mb-2">${destination.address}</p>
-                <div class="btn-group-vertical w-100">
-                    <button class="btn btn-primary btn-sm" onclick="showNearbyPlaces(${destination.latitude}, ${destination.longitude})">
-                        Nearby Places
-                    </button>
-                    <button class="btn btn-info btn-sm" onclick="getWeatherForDestination(${destination.latitude}, ${destination.longitude})">
-                        Weather
+        // Create Mapbox marker
+        const marker = new mapboxgl.Marker(markerEl)
+            .setLngLat(coordinates)
+            .addTo(map);
+        
+        // Create enhanced popup
+        const popupContent = `
+            <div class="trip-destination-popup">
+                <h6 class="fw-bold text-primary">${destination.name}</h6>
+                <p class="mb-2"><i class="fas fa-map-marker-alt text-danger"></i> ${destination.address}</p>
+                ${destination.planned_date ? `<p class="mb-2"><i class="fas fa-calendar"></i> ${destination.planned_date}</p>` : ''}
+                <div class="btn-group-sm d-flex flex-wrap gap-1">
+                    <button class="btn btn-primary btn-sm" onclick="focusOnDestination(${destination.latitude}, ${destination.longitude})">
+                        <i class="fas fa-eye"></i> Focus
                     </button>
                     <button class="btn btn-${destination.is_visited ? 'warning' : 'success'} btn-sm" 
                             onclick="toggleVisited(${destination.id}, ${!destination.is_visited})">
-                        Mark ${destination.is_visited ? 'Unvisited' : 'Visited'}
+                        <i class="fas fa-${destination.is_visited ? 'undo' : 'check'}"></i>
+                        ${destination.is_visited ? 'Unvisit' : 'Visit'}
+                    </button>
+                    <button class="btn btn-info btn-sm" onclick="showNearbyPlaces(${destination.latitude}, ${destination.longitude})">
+                        <i class="fas fa-map"></i> Nearby
+                    </button>
+                    <button class="btn btn-secondary btn-sm" onclick="getWeatherForDestination(${destination.latitude}, ${destination.longitude})">
+                        <i class="fas fa-cloud-sun"></i> Weather
+                    </button>
+                    <button class="btn btn-danger btn-sm" onclick="removeDestination(${destination.id})">
+                        <i class="fas fa-trash"></i> Remove
                     </button>
                 </div>
             </div>
-        `
+        `;
+        
+        const popup = new mapboxgl.Popup({ offset: 25 }).setHTML(popupContent);
+        marker.setPopup(popup);
+        
+        tripMarkers.push(marker);
     });
     
-    const marker = markers.find(m => m.getTitle() === destination.name);
-    if (marker) {
-        infoWindow.open(map, marker);
+    // Fit bounds to show all destinations with enhanced 3D view
+    if (tripDestinations.length > 0) {
+        const bounds = new mapboxgl.LngLatBounds();
+        tripDestinations.forEach(dest => {
+            bounds.extend([dest.longitude, dest.latitude]);
+        });
+        map.fitBounds(bounds, {
+            padding: { top: 50, bottom: 50, left: 50, right: 50 },
+            pitch: 45,
+            bearing: 0
+        });
     }
 }
 
-// Get current location
+// Show 3D route visualization on map
+function showRouteOnMap() {
+    if (tripDestinations.length < 2) return;
+    
+    // Extract coordinates for route
+    const coordinates = tripDestinations
+        .sort((a, b) => a.order - b.order)
+        .map(dest => [dest.longitude, dest.latitude]);
+    
+    // Use mapboxUtils to add route
+    mapboxUtils.addRoute(coordinates, {
+        profile: 'driving' // or 'walking', 'cycling'
+    });
+}
+
+// Focus on specific destination with enhanced 3D view
+function focusOnDestination(lat, lng) {
+    map.flyTo({
+        center: [lng, lat],
+        zoom: 16,
+        pitch: 60,
+        bearing: Math.random() * 360, // Random bearing for variety
+        duration: 2000
+    });
+    
+    // Find and open popup for this destination
+    const marker = tripMarkers.find(m => {
+        const markerLngLat = m.getLngLat();
+        return Math.abs(markerLngLat.lat - lat) < 0.0001 && 
+               Math.abs(markerLngLat.lng - lng) < 0.0001;
+    });
+    
+    if (marker) {
+        marker.togglePopup();
+    }
+}
+
+// Get current location with 3D marker
 function getCurrentLocation() {
     if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition((position) => {
@@ -453,36 +533,77 @@ function getCurrentLocation() {
                 lng: position.coords.longitude
             };
             
-            // Add current location marker
-            new google.maps.Marker({
-                position: currentUserLocation,
-                map: map,
-                title: "Your Current Location",
-                icon: {
-                    url: 'http://maps.google.com/mapfiles/ms/icons/blue-dot.png',
-                    scaledSize: new google.maps.Size(40, 40)
+            // Create user location marker with pulsing animation
+            const userMarkerEl = document.createElement('div');
+            userMarkerEl.className = 'user-location-marker';
+            userMarkerEl.style.cssText = `
+                width: 20px;
+                height: 20px;
+                border-radius: 50%;
+                background: #007cbf;
+                border: 4px solid white;
+                box-shadow: 0 0 0 4px rgba(0, 124, 191, 0.3);
+                animation: user-location-pulse 2s infinite;
+                cursor: pointer;
+            `;
+            
+            // Add CSS animation
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes user-location-pulse {
+                    0% { box-shadow: 0 0 0 4px rgba(0, 124, 191, 0.3); }
+                    50% { box-shadow: 0 0 0 10px rgba(0, 124, 191, 0.1); }
+                    100% { box-shadow: 0 0 0 4px rgba(0, 124, 191, 0.3); }
                 }
-            });
+            `;
+            document.head.appendChild(style);
+            
+            // Add marker to map
+            const userMarker = new mapboxgl.Marker(userMarkerEl)
+                .setLngLat([currentUserLocation.lng, currentUserLocation.lat])
+                .addTo(map);
+            
+            // Add popup
+            const userPopup = new mapboxgl.Popup({ offset: 25 })
+                .setHTML(`
+                    <div class="user-location-popup">
+                        <h6 class="text-primary"><i class="fas fa-crosshairs"></i> Your Location</h6>
+                        <button class="btn btn-success btn-sm" onclick="addCurrentLocationToTrip()">
+                            <i class="fas fa-plus"></i> Add to Trip
+                        </button>
+                    </div>
+                `);
+            
+            userMarker.setPopup(userPopup);
         });
     }
 }
 
-// Setup autocomplete for search
-function setupAutocomplete() {
+// Setup Mapbox geocoding search
+function setupSearch() {
     const searchInput = document.getElementById('destinationSearch');
-    const autocomplete = new google.maps.places.Autocomplete(searchInput);
     
-    autocomplete.addListener('place_changed', () => {
-        const place = autocomplete.getPlace();
-        if (!place.geometry) return;
-        
-        addDestinationToTrip({
-            name: place.name,
-            address: place.formatted_address,
-            latitude: place.geometry.location.lat(),
-            longitude: place.geometry.location.lng(),
-            place_id: place.place_id
-        });
+    searchInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            searchPlaces();
+        }
+    });
+}
+
+// Add current location to trip
+function addCurrentLocationToTrip() {
+    if (!currentUserLocation) {
+        showToast('Location not available', 'warning');
+        return;
+    }
+    
+    addDestinationToTrip({
+        name: 'My Current Location',
+        address: `${currentUserLocation.lat.toFixed(6)}, ${currentUserLocation.lng.toFixed(6)}`,
+        latitude: currentUserLocation.lat,
+        longitude: currentUserLocation.lng,
+        place_id: 'current-location'
     });
 }
 
@@ -776,37 +897,73 @@ function showToast(message, type) {
     }, 5000);
 }
 
-// Search places function
+// Search places using Mapbox Geocoding API
 function searchPlaces() {
-    const query = document.getElementById('destinationSearch').value;
+    const query = document.getElementById('destinationSearch').value.trim();
     if (!query) return;
     
-    const service = new google.maps.places.PlacesService(map);
-    const request = {
-        query: query,
-        fields: ['name', 'geometry', 'formatted_address', 'place_id'],
-    };
+    const searchResults = document.getElementById('searchResults');
+    searchResults.innerHTML = '<div class="text-center"><i class="fas fa-spinner fa-spin"></i> Searching...</div>';
     
-    service.textSearch(request, (results, status) => {
-        if (status === google.maps.places.PlacesServiceStatus.OK && results.length > 0) {
-            const place = results[0];
-            addDestinationToTrip({
-                name: place.name,
-                address: place.formatted_address,
-                latitude: place.geometry.location.lat(),
-                longitude: place.geometry.location.lng(),
-                place_id: place.place_id
-            });
-        } else {
-            showToast('No places found', 'warning');
-        }
-    });
+    // Use Mapbox Geocoding API
+    fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?country=IN&limit=5&access_token=${mapboxgl.accessToken}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.features && data.features.length > 0) {
+                let resultsHtml = '<h6 class="text-primary">Search Results:</h6>';
+                data.features.forEach((feature, index) => {
+                    resultsHtml += `
+                        <div class="search-result-item p-2 mb-2 bg-light rounded cursor-pointer" 
+                             onclick="selectSearchResult(${index})" data-feature='${JSON.stringify(feature)}'>
+                            <h6 class="mb-1">${feature.place_name}</h6>
+                            <small class="text-muted">${feature.properties.category || 'Location'}</small>
+                        </div>
+                    `;
+                });
+                searchResults.innerHTML = resultsHtml;
+            } else {
+                searchResults.innerHTML = '<div class="alert alert-warning">No places found for "' + query + '"</div>';
+            }
+        })
+        .catch(error => {
+            console.error('Search error:', error);
+            searchResults.innerHTML = '<div class="alert alert-danger">Error searching places</div>';
+        });
 }
-</script>
 
-<!-- Load Google Maps API -->
-<script async defer
-    src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}&libraries=places&callback=initMap">
+// Select search result
+function selectSearchResult(index) {
+    const resultItems = document.querySelectorAll('.search-result-item');
+    const featureData = JSON.parse(resultItems[index].getAttribute('data-feature'));
+    
+    addDestinationToTrip({
+        name: featureData.text || featureData.place_name,
+        address: featureData.place_name,
+        latitude: featureData.center[1],
+        longitude: featureData.center[0],
+        place_id: featureData.id || 'mapbox-' + Date.now()
+    });
+    
+    // Clear search results and input
+    document.getElementById('searchResults').innerHTML = '';
+    document.getElementById('destinationSearch').value = '';
+}
+
+// Initialize everything when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    // Wait for mapboxUtils to be available
+    if (typeof mapboxUtils !== 'undefined') {
+        initMap();
+        setupSearch();
+    } else {
+        setTimeout(() => {
+            if (typeof mapboxUtils !== 'undefined') {
+                initMap();
+                setupSearch();
+            }
+        }, 500);
+    }
+});
 </script>
 
 {% csrf_token %}

@@ -1,3 +1,180 @@
+# Smart Tourism India
+
+A Django web application for exploring tourist destinations across India with AI-powered assistance and interactive mapping.
+
+## Features
+
+- **Interactive Maps**: Geoapify-powered maps with destination markers
+- **Search Functionality**: Live search with location-based results  
+- **AI Assistant**: Chatbot for tourism recommendations
+- **Destination Catalog**: Browse destinations by categories and states
+- **Trip Planning**: Create and manage multi-destination trips
+- **User Authentication**: Registration, login, and profile management
+
+## Quick Start
+
+1. **Install Dependencies**
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+2. **Configure API Key**
+   - Get free API key from https://www.geoapify.com/
+   - Update `geoapify_config.py`:
+     ```python
+     GEOAPIFY_API_KEY = 'your-actual-api-key-here'
+     ```
+
+3. **Run Application**
+   ```bash
+   python manage.py migrate
+   python manage.py runserver
+   ```
+
+4. **Access Application**
+   - Open http://127.0.0.1:8000 in your browser
+
+## Project Structure
+
+```
+smart-tourism-india/
+├── accounts/           # User authentication
+├── chatbot/           # AI assistant functionality  
+├── tourism/           # Main tourism features
+│   ├── models.py      # Database models
+│   ├── views.py       # View controllers
+│   └── templates/     # HTML templates
+├── static/            # CSS, JS, images
+├── templates/         # Base templates
+└── manage.py          # Django management
+```
+
+## Technology Stack
+
+- **Backend**: Django 4.2
+- **Frontend**: HTML5, CSS3, JavaScript
+- **Database**: SQLite (development)
+- **Maps**: Geoapify API
+- **UI**: Bootstrap 5, Font Awesome
+
+---
+
+Built with Django for exploring India's incredible destinations.
+
+# 🇮🇳 Smart Tourism India
+
+> Discover Incredible India with AI-powered tourism platform featuring beautiful destinations, interactive maps, and personalized recommendations.
+
+[![Django](https://img.shields.io/badge/Django-5.2.6-green.svg)](https://www.djangoproject.com/)
+[![Python](https://img.shields.io/badge/Python-3.8+-blue.svg)](https://www.python.org/)
+[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
+## ✨ Features
+
+🎥 **Video Background** - Stunning nature videos on homepage  
+🗺️ **Interactive Maps** - OpenStreetMap integration with Leaflet.js  
+🎨 **Travel Colors** - Ocean blue, forest green, sunset orange theme  
+🔍 **Smart Search** - Find destinations with advanced filtering  
+⭐ **Reviews & Ratings** - Community-driven destination reviews  
+❤️ **Wishlist** - Save favorite destinations  
+🤖 **AI Chatbot** - Smart tourism assistance  
+📱 **Responsive** - Perfect on all devices  
+
+## 🚀 Quick Start
+
+```bash
+# Clone repository
+git clone https://github.com/yourusername/smart-tourism-india.git
+cd smart-tourism-india
+
+# Setup virtual environment
+python -m venv venv
+source venv/bin/activate  # Linux/Mac
+venv\Scripts\activate     # Windows
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Setup database
+python manage.py migrate
+python manage.py setup_categories
+python manage.py complete_setup
+
+# Run server
+python manage.py runserver
+```
+
+Visit: http://localhost:8000
+
+## 📸 Screenshots
+
+### 🏠 Homepage with Video Background
+Stunning video background with glassmorphism hero section and travel-themed colors.
+
+### 🗺️ Interactive Maps
+OpenStreetMap integration with category-based colored markers and destination details.
+
+### 📱 Mobile Responsive
+Beautiful responsive design that works perfectly on all screen sizes.
+
+## 🛠️ Tech Stack
+
+- **Backend**: Django 5.2.6, Python 3.8+
+- **Frontend**: HTML5, CSS3, JavaScript, Bootstrap 5
+- **Maps**: OpenStreetMap, Leaflet.js
+- **Database**: SQLite (development), PostgreSQL (production)
+- **Styling**: Custom CSS with CSS Variables
+
+## 📂 Project Structure
+
+```
+smart-tourism-india/
+├── 🎯 tourism/          # Main app
+├── 👤 accounts/         # Authentication
+├── 🤖 chatbot/          # AI features
+├── 📄 templates/        # HTML templates
+├── 🎨 static/          # CSS, JS, media
+│   ├── css/
+│   ├── js/
+│   ├── images/
+│   └── videos/
+└── ⚙️ smart_tourism_platform/
+```
+
+## 🎨 Color Palette
+
+- **Ocean Blue** (`#0EA5E9`) - Primary color
+- **Forest Green** (`#059669`) - Secondary color
+- **Sunset Orange** (`#F59E0B`) - Accent color
+- **Coral Pink** (`#FB7185`) - Accent color
+
+## 📖 Documentation
+
+For detailed setup instructions, see [SETUP_GUIDE.md](SETUP_GUIDE.md)
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+- OpenStreetMap for free mapping data
+- Unsplash for beautiful images
+- Bootstrap for responsive framework
+- Leaflet.js for interactive maps
+
+---
+
+**Made with ❤️ for India's incredible tourism** 🇮🇳
+
 # Smart Digital Tourism Platform for India
 
 A comprehensive web application that promotes eco, cultural, and heritage tourism across India, featuring an AI-powered chatbot with voice-to-text capabilities and interactive Google Maps integration.

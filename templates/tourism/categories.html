@@ -4,19 +4,31 @@
 {% block title %}Tourism Categories - Smart Tourism India{% endblock %}
 
 {% block content %}
+<!-- Hero Section with Video Background -->
+<section class="page-hero-section categories-hero" id="categories-hero">
+    <!-- Video Background -->
+    <div class="page-hero-video">
+        <video autoplay muted loop playsinline class="categories-video">
+            <source src="{% static 'videos/categories-bg.mp4' %}" type="video/mp4">
+            <source src="{% static 'videos/categories-bg.webm' %}" type="video/webm">
+        </video>
+        <img src="{% static 'images/backgrounds/categories-bg.jpg' %}" alt="Cultural Heritage Background" class="page-hero-video-fallback">
+    </div>
+    
+    <div class="page-hero-content">
+        <h1 class="page-hero-title">
+            <i class="fas fa-layer-group me-3"></i>
+            Tourism Categories
+        </h1>
+        <p class="page-hero-subtitle">
+            Discover the diverse types of tourism experiences India has to offer - from cultural heritage to adventure sports
+        </p>
+    </div>
+</section>
+
 <div class="container-fluid py-5 bg-light">
     <div class="container">
         <div class="row">
-            <div class="col-12">
-                <h1 class="mb-5 text-center">
-                    <i class="fas fa-layer-group me-2"></i>
-                    Explore Tourism Categories
-                </h1>
-                <p class="text-center text-muted mb-5">
-                    Discover the diverse types of tourism experiences India has to offer
-                </p>
-                
-                <div class="row">
                     {% for category in categories %}
                         <div class="col-lg-4 col-md-6 mb-4">
                             <div class="card h-100 shadow-sm category-card">

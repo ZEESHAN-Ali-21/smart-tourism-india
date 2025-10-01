@@ -386,33 +386,63 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-// Google Maps
+// Mapbox GL JS 3D Map for destination
 {% if destination.latitude and destination.longitude %}
-function initMap() {
-    const location = { 
-        lat: parseFloat({{ destination.latitude }}), 
-        lng: parseFloat({{ destination.longitude }}) 
+function initDestinationMap() {
+    const lat = parseFloat({{ destination.latitude }});
+    const lng = parseFloat({{ destination.longitude }});
+    
+    // Initialize Mapbox 3D map
+    const map = mapboxUtils.initMap('map', {
+        center: [lng, lat], // Mapbox uses [lng, lat] format
+        zoom: 15,
+        pitch: 60, // More dramatic 3D angle for single location
+        bearing: 0
+    });
+    
+    // Add destination marker with enhanced popup
+    const destinationData = {
+        name: "{{ destination.name|escapejs }}",
+        latitude: lat,
+        longitude: lng,
+        city: "{{ destination.city|escapejs }}",
+        state: {name: "{{ destination.state.name|escapejs }}"},
+        short_description: "{{ destination.short_description|escapejs }}",
+        description: "{{ destination.description|truncatewords:30|escapejs }}",
+        average_rating: {{ destination.average_rating|default:0 }},
+        slug: "{{ destination.slug }}",
+        categories: [{% for cat in destination.categories.all %}{name: "{{ cat.name }}"}{% if not forloop.last %},{% endif %}{% endfor %}]
     };
     
-    const map = new google.maps.Map(document.getElementById('map'), {
-        zoom: 15,
-        center: location,
-    });
-    
-    const marker = new google.maps.Marker({
-        position: location,
-        map: map,
-        title: '{{ destination.name }}'
-    });
+    // Add marker and immediately open popup
+    setTimeout(() => {
+        const marker = mapboxUtils.addMarker(destinationData);
+        if (marker) {
+            marker.togglePopup(); // Open popup immediately
+        }
+    }, 1000); // Wait for map to load
 }
+
+// Initialize map when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    if (document.getElementById('map')) {
+        // Wait for mapboxUtils to be available
+        if (typeof mapboxUtils !== 'undefined') {
+            initDestinationMap();
+        } else {
+            setTimeout(() => {
+                if (typeof mapboxUtils !== 'undefined') {
+                    initDestinationMap();
+                }
+            }, 500);
+        }
+    }
+});
 {% endif %}
 </script>
 
-{% if destination.latitude and destination.longitude %}
-<script async defer
-    src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&callback=initMap">
-</script>
-{% endif %}
+<!-- Mapbox GL JS is already included in base template -->
+<!-- 3D map with terrain and buildings for enhanced destination visualization -->
 
 {% csrf_token %}
 {% endblock %}

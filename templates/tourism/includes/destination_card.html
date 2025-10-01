@@ -1,0 +1,224 @@
+{% load destination_extras %}
+{% load static %}
+
+<div class="col-lg-4 col-md-6 mb-4">
+    <div class="card destination-card h-100 shadow-sm {{ card_class }}">
+        <div class="position-relative">
+            <!-- Main Image or Attractive Placeholder -->
+            {% if destination.main_image %}
+                <img src="{{ destination.main_image.url }}" 
+                     class="card-img-top destination-image" 
+                     alt="{{ destination.name }}"
+                     loading="lazy"
+                     style="height: 280px; object-fit: cover;">
+            {% else %}
+                <div class="destination-placeholder {{ destination.categories.first.name|default:'cultural' }}">
+                    {% with first_category=destination.categories.first %}
+                        {% if first_category.name == 'cultural' %}
+                            <i class="fas fa-landmark"></i>
+                        {% elif first_category.name == 'historical' %}
+                            <i class="fas fa-monument"></i>
+                        {% elif first_category.name == 'religious' %}
+                            <i class="fas fa-place-of-worship"></i>
+                        {% elif first_category.name == 'adventure' %}
+                            <i class="fas fa-hiking"></i>
+                        {% elif first_category.name == 'wildlife' %}
+                            <i class="fas fa-paw"></i>
+                        {% elif first_category.name == 'beach' %}
+                            <i class="fas fa-umbrella-beach"></i>
+                        {% elif first_category.name == 'mountain' %}
+                            <i class="fas fa-mountain"></i>
+                        {% elif first_category.name == 'eco' %}
+                            <i class="fas fa-leaf"></i>
+                        {% else %}
+                            <i class="fas fa-map-marker-alt"></i>
+                        {% endif %}
+                    {% endwith %}
+                </div>
+            {% endif %}
+            
+            <!-- Category Tags with Enhanced Design -->
+            <div class="category-tags">
+                {% for category in destination.categories.all|slice:":2" %}
+                    <span class="category-tag">
+                        {% if category.name == 'cultural' %}
+                            <i class="fas fa-landmark me-1"></i>
+                        {% elif category.name == 'historical' %}
+                            <i class="fas fa-monument me-1"></i>
+                        {% elif category.name == 'religious' %}
+                            <i class="fas fa-place-of-worship me-1"></i>
+                        {% elif category.name == 'adventure' %}
+                            <i class="fas fa-hiking me-1"></i>
+                        {% elif category.name == 'wildlife' %}
+                            <i class="fas fa-paw me-1"></i>
+                        {% elif category.name == 'beach' %}
+                            <i class="fas fa-umbrella-beach me-1"></i>
+                        {% elif category.name == 'mountain' %}
+                            <i class="fas fa-mountain me-1"></i>
+                        {% elif category.name == 'eco' %}
+                            <i class="fas fa-leaf me-1"></i>
+                        {% endif %}
+                        {{ category.get_name_display }}
+                    </span>
+                {% endfor %}
+            </div>
+            
+            <!-- Enhanced Wishlist Button -->
+            {% if user.is_authenticated %}
+                <button class="wishlist-btn" data-destination-id="{{ destination.id }}">
+                    <i class="far fa-heart"></i>
+                </button>
+            {% endif %}
+        </div>
+        
+        <div class="card-body d-flex flex-column">
+            <!-- Title -->
+            <h5 class="card-title">{{ destination.name }}</h5>
+            
+            <!-- Location Info -->
+            <p class="location-info">
+                <i class="fas fa-map-marker-alt"></i>
+                {{ destination.city }}, {{ destination.state.name }}
+            </p>
+            
+            <!-- Rating Display -->
+            <div class="rating-display">
+                <div class="star-rating">
+                    {% with destination.average_rating as rating %}
+                    {% for i in "12345" %}
+                        {% if forloop.counter <= rating %}
+                        <i class="fas fa-star"></i>
+                        {% else %}
+                        <i class="far fa-star"></i>
+                        {% endif %}
+                    {% endfor %}
+                    {% endwith %}
+                </div>
+                <span class="rating-count">({{ destination.total_reviews }} reviews)</span>
+            </div>
+            
+            <!-- Description -->
+            {% if show_description %}
+                <p class="card-text">
+                    {{ destination.short_description|truncatewords:15 }}
+                </p>
+            {% endif %}
+            
+            <!-- Action Buttons -->
+            <div class="mt-auto d-flex justify-content-between align-items-center">
+                <a href="{% url 'tourism:destination_detail' destination.slug %}" class="btn btn-primary">
+                    <i class="fas fa-info-circle me-1"></i> Details
+                </a>
+                {% if destination.latitude and destination.longitude %}
+                <button class="btn btn-outline-secondary btn-sm" onclick="focusOnDestination({
+                    name: '{{ destination.name|escapejs }}',
+                    latitude: '{{ destination.latitude }}',
+                    longitude: '{{ destination.longitude }}',
+                    slug: '{{ destination.slug }}'
+                })">
+                    <i class="fas fa-map-marker-alt"></i>
+                </button>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.destination-card {
+    transition: all 0.3s ease;
+    border: none;
+    border-radius: 15px;
+    overflow: hidden;
+}
+
+.destination-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.15) !important;
+}
+
+.destination-image {
+    transition: transform 0.3s ease;
+}
+
+.destination-card:hover .destination-image {
+    transform: scale(1.05);
+}
+
+.badge {
+    font-size: 0.75rem;
+    padding: 0.5em 0.75em;
+}
+
+.card-footer {
+    background: rgba(248, 249, 250, 0.8) !important;
+    backdrop-filter: blur(10px);
+}
+
+.destination-card .btn {
+    border-radius: 8px;
+}
+
+.destination-card .btn-group .btn {
+    border-radius: 0;
+}
+
+.destination-card .btn-group .btn:first-child {
+    border-radius: 8px 0 0 8px;
+}
+
+.destination-card .btn-group .btn:last-child {
+    border-radius: 0 8px 8px 0;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+    
+    // Wishlist functionality
+    document.querySelectorAll('.wishlist-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            // Add wishlist logic here
+            const icon = this.querySelector('i');
+            icon.classList.toggle('far');
+            icon.classList.toggle('fas');
+            
+            if (icon.classList.contains('fas')) {
+                this.classList.remove('btn-outline-danger');
+                this.classList.add('btn-danger');
+            } else {
+                this.classList.remove('btn-danger');
+                this.classList.add('btn-outline-danger');
+            }
+        });
+    });
+    
+    // Share functionality
+    document.querySelectorAll('.share-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const destinationName = this.dataset.destinationName;
+            if (navigator.share) {
+                navigator.share({
+                    title: destinationName,
+                    text: `Check out ${destinationName} on Smart Tourism India!`,
+                    url: window.location.href
+                });
+            } else {
+                // Fallback - copy to clipboard
+                navigator.clipboard.writeText(window.location.href);
+                // Show toast or alert
+                const toast = document.createElement('div');
+                toast.className = 'toast-notification';
+                toast.textContent = 'Link copied to clipboard!';
+                document.body.appendChild(toast);
+                setTimeout(() => toast.remove(), 3000);
+            }
+        });
+    });
+});
+</script>

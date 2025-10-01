@@ -23,7 +23,7 @@ class HomeView(TemplateView):
         context.update({
             'featured_destinations': Destination.objects.filter(
                 featured=True, is_active=True
-            ).select_related('state').prefetch_related('categories')[:6],
+            ).select_related('state').prefetch_related('categories')[:12],
             'categories': Category.objects.all().annotate(
                 destination_count=Count('destinations')
             ),
@@ -77,6 +77,11 @@ class DestinationListView(ListView):
             except (ValueError, TypeError):
                 pass
         
+        # Featured filtering
+        featured = self.request.GET.get('featured')
+        if featured == '1' or featured == 'true':
+            queryset = queryset.filter(featured=True)
+        
         # Sorting
         sort_by = self.request.GET.get('sort', '-featured')
         valid_sorts = ['-featured', 'name', '-average_rating', '-total_reviews', '-created_at']
@@ -98,6 +103,7 @@ class DestinationListView(ListView):
             'selected_category': self.request.GET.get('category', ''),
             'selected_state': self.request.GET.get('state', ''),
             'selected_rating': self.request.GET.get('rating', ''),
+            'selected_featured': self.request.GET.get('featured', ''),
             'sort_by': self.request.GET.get('sort', '-featured'),
         })
         return context
@@ -366,3 +372,30 @@ def search_suggestions(request):
         suggestions.extend([{'type': 'state', 'name': name} for name in states])
     
     return JsonResponse({'suggestions': suggestions})
+
+
+class InteractiveMapsView(TemplateView):
+    """Interactive maps page with destinations and filters"""
+    template_name = 'tourism/maps.html'
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        
+        # Get all states with destinations
+        states = State.objects.annotate(
+            destination_count=Count('destination', filter=Q(destination__is_active=True))
+        ).filter(destination_count__gt=0).order_by('name')
+        
+        # Calculate statistics  
+        destinations = Destination.objects.filter(is_active=True)
+        total_destinations = destinations.count()
+        featured_destinations = destinations.filter(featured=True).count()
+        states_covered = states.count()
+        
+        context.update({
+            'states': states,
+            'total_destinations': total_destinations,
+            'featured_destinations': featured_destinations,
+            'states_covered': states_covered,
+        })
+        return context

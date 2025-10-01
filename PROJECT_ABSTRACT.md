@@ -1,7 +1,0 @@
-# Smart Digital Tourism Platform for India - Project Abstract
-
-## Overview
-
-Smart Digital Tourism Platform for India is a comprehensive web application promoting eco, cultural, and heritage tourism across India. Built with Django 5.2.6 and Python 3.12, the platform features secure user authentication, extensive tourism database with famous Indian destinations, and interactive Google Maps integration. The AI-powered chatbot utilizes Web Speech API for voice-to-text capabilities, enabling natural tourism queries. Users can filter destinations by categories (eco, cultural, religious, adventure, historical, wildlife, beach, mountain), write reviews, manage wishlists, and explore detailed destination information including cultural significance and local cuisine. The responsive frontend leverages Bootstrap 5, Font Awesome 6, and custom CSS animations. Backend technologies include SQLite for development (PostgreSQL-ready for production), Pillow for image processing, and AJAX for dynamic content loading. The platform includes comprehensive user profiles, review systems, analytics tracking, and admin panel for content management.
-
-**Tech Stack**: Django, Python, SQLite/PostgreSQL, Bootstrap, JavaScript, Google Maps API, Web Speech API, Font Awesome

@@ -4,18 +4,55 @@
 {% block title %}My Trips - Smart Tourism India{% endblock %}
 
 {% block content %}
+<!-- Hero Section with Video Background -->
+<section class="page-hero-section trips-hero" id="trips-hero">
+    <!-- Video Background -->
+    <div class="page-hero-video">
+        <video autoplay muted loop playsinline class="trips-video">
+            <source src="{% static 'videos/trips-bg.mp4' %}" type="video/mp4">
+            <source src="{% static 'videos/trips-bg.webm' %}" type="video/webm">
+        </video>
+        <img src="{% static 'images/backgrounds/trips-bg.jpg' %}" alt="Travel Background" class="page-hero-video-fallback">
+    </div>
+    
+    <div class="page-hero-content">
+        <h1 class="page-hero-title">
+            <i class="fas fa-suitcase-rolling me-3"></i>
+            My Travel Plans
+        </h1>
+        <p class="page-hero-subtitle">
+            Organize your perfect Indian adventure - create, manage and track your travel itineraries
+        </p>
+    </div>
+</section>
+
 <div class="container-fluid py-5 bg-light">
     <div class="container">
         <div class="row">
             <div class="col-12">
                 <div class="d-flex justify-content-between align-items-center mb-4">
-                    <h1>
-                        <i class="fas fa-suitcase-rolling me-2 text-primary"></i>
-                        My Trips
-                    </h1>
-                    <a href="{% url 'tourism:create_trip' %}" class="btn btn-primary btn-lg">
-                        <i class="fas fa-plus"></i> Create New Trip
-                    </a>
+                    <h2>
+                        <i class="fas fa-route me-2 text-primary"></i>
+                        Your Trips
+                    </h2>
+                    <div class="btn-group">
+                        {% if trips %}
+                            <!-- Form method -->
+                            <form id="clearTripsForm" method="POST" action="{% url 'tourism:clear_all_trips' %}" style="display: inline;">
+                                {% csrf_token %}
+                                <button type="button" class="btn btn-outline-danger" onclick="confirmClearTrips()" style="margin-right: 10px;">
+                                    <i class="fas fa-trash-alt"></i> Clear All Trips (Form)
+                                </button>
+                            </form>
+                            <!-- Alternative direct link method -->
+                            <a href="#" class="btn btn-outline-warning" onclick="confirmClearTripsLink(); return false;" style="margin-right: 10px;">
+                                <i class="fas fa-broom"></i> Clear All Trips (Link)
+                            </a>
+                        {% endif %}
+                        <a href="{% url 'tourism:create_trip' %}" class="btn btn-primary btn-lg">
+                            <i class="fas fa-plus"></i> Create New Trip
+                        </a>
+                    </div>
                 </div>
                 
                 <!-- Trip Cards -->
@@ -95,13 +132,17 @@
                         </div>
                     {% empty %}
                         <div class="col-12">
-                            <div class="text-center py-5">
-                                <i class="fas fa-map-marked-alt fa-5x text-muted mb-4"></i>
-                                <h3 class="text-muted">No trips yet!</h3>
-                                <p class="text-muted mb-4">Start planning your first trip to explore amazing destinations.</p>
-                                <a href="{% url 'tourism:create_trip' %}" class="btn btn-primary btn-lg">
-                                    <i class="fas fa-plus"></i> Create Your First Trip
-                                </a>
+                            <div class="empty-trips-section">
+                                <div class="empty-trips-content">
+                                    <div class="empty-trips-icon">
+                                        <i class="fas fa-map-marked-alt"></i>
+                                    </div>
+                                    <h3>No trips yet!</h3>
+                                    <p>Start planning your first trip to explore amazing destinations across India.</p>
+                                    <a href="{% url 'tourism:create_trip' %}" class="btn btn-primary btn-lg">
+                                        <i class="fas fa-plus"></i> Create Your First Trip
+                                    </a>
+                                </div>
                             </div>
                         </div>
                     {% endfor %}
@@ -150,5 +191,146 @@
     transform: translateY(-5px);
     box-shadow: 0 8px 25px rgba(0,0,0,0.15) !important;
 }
+
+/* Empty trips section styling */
+.empty-trips-section {
+    position: relative;
+    min-height: 500px;
+    background: linear-gradient(135deg, rgba(0,0,0,0.6), rgba(0,0,0,0.4)), 
+                url("{% static 'images/backgrounds/hero-landscape.jpg' %}") center/cover;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    margin: 2rem 0;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.1);
+}
+
+.empty-trips-content {
+    text-align: center;
+    color: white;
+    z-index: 2;
+    padding: 3rem;
+    max-width: 600px;
+}
+
+.empty-trips-icon {
+    font-size: 5rem;
+    margin-bottom: 2rem;
+    opacity: 0.9;
+    background: linear-gradient(45deg, #fff, #f8f9fa);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-shadow: 0 0 30px rgba(255,255,255,0.3);
+}
+
+.empty-trips-content h3 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+}
+
+.empty-trips-content p {
+    font-size: 1.2rem;
+    margin-bottom: 2rem;
+    opacity: 0.95;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+    line-height: 1.6;
+}
+
+.empty-trips-content .btn {
+    padding: 1rem 2rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+    border-radius: 50px;
+    box-shadow: 0 10px 30px rgba(0,123,255,0.3);
+    transition: all 0.3s ease;
+    border: none;
+    background: linear-gradient(45deg, #007bff, #0056b3);
+}
+
+.empty-trips-content .btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 15px 40px rgba(0,123,255,0.4);
+    background: linear-gradient(45deg, #0056b3, #004085);
+}
+
+/* Animation for empty trips */
+.empty-trips-section::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.1) 50%, transparent 70%);
+    transform: translateX(-100%);
+    animation: shimmer 3s infinite;
+}
+
+@keyframes shimmer {
+    0% {
+        transform: translateX(-100%);
+    }
+    100% {
+        transform: translateX(100%);
+    }
+}
+
+/* Clear button styling */
+.btn-outline-danger {
+    border-color: #dc3545;
+    color: #dc3545;
+    transition: all 0.3s ease;
+}
+
+.btn-outline-danger:hover {
+    background-color: #dc3545;
+    border-color: #dc3545;
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(220,53,69,0.3);
+}
 </style>
+
+<script>
+function confirmClearTrips() {
+    console.log('confirmClearTrips called');
+    if (confirm('Are you sure you want to clear all your trips? This action cannot be undone.')) {
+        // Submit the existing form
+        const form = document.getElementById('clearTripsForm');
+        console.log('Form found:', form);
+        if (form) {
+            console.log('Submitting form...');
+            form.submit();
+        } else {
+            console.error('Clear trips form not found');
+            alert('Error: Unable to clear trips. Please refresh the page and try again.');
+        }
+    }
+}
+
+// Alternative method using direct navigation
+function confirmClearTripsLink() {
+    console.log('confirmClearTripsLink called');
+    if (confirm('Are you sure you want to clear all your trips? This action cannot be undone.')) {
+        window.location.href = "{% url 'tourism:clear_all_trips' %}";
+    }
+}
+
+// Test function to debug
+function testClearTrips() {
+    console.log('Test function called');
+    console.log('Available forms on page:', document.querySelectorAll('form'));
+    console.log('Clear trips form:', document.getElementById('clearTripsForm'));
+}
+
+// Call test function when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    testClearTrips();
+});
+</script>
 {% endblock %}

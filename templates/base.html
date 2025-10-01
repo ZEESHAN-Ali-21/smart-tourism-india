@@ -14,6 +14,9 @@
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
+    <!-- Mapbox GL JS CSS -->
+    <link href='https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css' rel='stylesheet' />
+    
     <!-- Custom CSS -->
     {% load static %}
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
@@ -48,6 +51,11 @@
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'tourism:categories' %}">
                             <i class="fas fa-layer-group me-1"></i>Categories
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'tourism:interactive_maps' %}">
+                            <i class="fas fa-globe me-1"></i>Maps
                         </a>
                     </li>
                     {% if user.is_authenticated %}
@@ -210,12 +218,31 @@
     <!-- Bootstrap 5 JS Bundle -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
-    <!-- Google Maps API -->
-    <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY&libraries=places&callback=initMap" async defer></script>
+    <!-- Mapbox GL JS -->
+    <script src='https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js'></script>
+    
+    <!-- Mapbox Configuration -->
+    <script>
+        // Set Mapbox access token globally
+        mapboxgl.accessToken = '{{ MAPBOX_ACCESS_TOKEN|default:"pk.YOUR_MAPBOX_ACCESS_TOKEN_HERE" }}';
+        
+        // Global Mapbox configuration
+        window.MAPBOX_CONFIG = {
+            accessToken: mapboxgl.accessToken,
+            style: 'mapbox://styles/mapbox/outdoors-v12', // Good for tourism with terrain
+            center: [78.9629, 20.5937], // Center of India
+            zoom: 4.5,
+            pitch: 45, // 3D view angle
+            bearing: 0,
+            container: null // Will be set by individual pages
+        };
+    </script>
+    
+    <!-- Mapbox Utilities -->
+    <script src="{% static 'js/mapbox-utils.js' %}"></script>
     
     <!-- Custom JavaScript -->
     <script src="{% static 'js/main.js' %}"></script>
-    <script src="{% static 'js/maps.js' %}"></script>
     
     {% block extra_js %}{% endblock %}
 </body>

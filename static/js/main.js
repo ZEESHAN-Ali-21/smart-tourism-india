@@ -1,131 +1,84 @@
 // Smart Tourism India - Main JavaScript
 
+// Handle background image loading fallbacks
 document.addEventListener('DOMContentLoaded', function() {
-    // Initialize animations
-    initializeAnimations();
-    
-    // Initialize search functionality
-    initializeSearch();
-    
-    // Initialize wishlist functionality
-    initializeWishlist();
-    
-    // Initialize filter chips
-    initializeFilters();
-    
-    // Initialize tooltips
-    initializeTooltips();
-    
-    // Initialize smooth scrolling
-    initializeSmoothScroll();
-});
-
-// Animation observers
-function initializeAnimations() {
-    if ('IntersectionObserver' in window) {
-        const animatedElements = document.querySelectorAll('.fade-in, .slide-up, .scale-in');
+    // Function to check if background image loads
+    function checkBackgroundImage(element, fallbackClass) {
+        if (!element) return;
         
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    entry.target.style.animationPlayState = 'running';
-                    observer.unobserve(entry.target);
-                }
+        const style = window.getComputedStyle(element);
+        const backgroundImage = style.backgroundImage;
+        
+        if (backgroundImage && backgroundImage !== 'none') {
+            const imageUrl = backgroundImage.replace(/url\(["']?([^"']+)["']?\)/g, '$1');
+            const img = new Image();
+            
+            img.onload = function() {
+                // Image loaded successfully
+                console.log('Background image loaded:', imageUrl);
+            };
+            
+            img.onerror = function() {
+                // Image failed to load, add fallback class
+                console.log('Background image failed to load:', imageUrl);
+                element.classList.add('no-image');
+            };
+            
+            img.src = imageUrl;
+        } else {
+            // No background image set, add fallback class
+            element.classList.add('no-image');
+        }
+    }
+    
+    // Handle video backgrounds for page hero sections
+    const videoSections = [
+        { id: 'destinations-hero', videoClass: 'destinations-video' },
+        { id: 'categories-hero', videoClass: 'categories-video' },
+        { id: 'maps-hero', videoClass: 'maps-video' },
+        { id: 'trips-hero', videoClass: 'trips-video' }
+    ];
+    
+    videoSections.forEach(function(section) {
+        const element = document.getElementById(section.id);
+        const video = element ? element.querySelector('.' + section.videoClass) : null;
+        
+        if (element && video) {
+            // Handle video loading errors
+            video.addEventListener('error', function() {
+                console.log('Video failed to load, using image fallback');
+                video.style.display = 'none';
             });
-        }, { threshold: 0.1 });
-        
-        animatedElements.forEach(el => {
-            el.style.animationPlayState = 'paused';
-            observer.observe(el);
-        });
-    }
-}
-
-// Search functionality
-function initializeSearch() {
-    const searchForm = document.querySelector('#searchForm');
-    const searchInput = document.querySelector('#searchInput');
-    const searchBtn = document.querySelector('.search-btn');
+            
+            // Handle video loading success
+            video.addEventListener('loadeddata', function() {
+                console.log('Video loaded successfully for', section.id);
+            });
+            
+            // For mobile optimization, pause video if not in viewport
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        if (video.paused) video.play();
+                    } else {
+                        if (!video.paused) video.pause();
+                    }
+                });
+            });
+            
+            observer.observe(element);
+        } else if (element) {
+            // No video found, check for background images
+            checkBackgroundImage(element, 'no-image');
+        }
+    });
     
-    if (searchForm && searchInput) {
-        // Add search suggestions (could be enhanced with AJAX)
-        searchInput.addEventListener('input', debounce(function(e) {
-            const query = e.target.value.trim();
-            if (query.length > 2) {
-                // Implement search suggestions here
-                console.log('Searching for:', query);
-            }
-        }, 300));
-        
-        // Handle form submission
-        searchForm.addEventListener('submit', function(e) {
-            if (searchInput.value.trim() === '') {
-                e.preventDefault();
-                searchInput.focus();
-                showToast('Please enter a search term', 'warning');
-            }
-        });
-    }
-}
-
-// Wishlist functionality
-function initializeWishlist() {
-    const wishlistBtns = document.querySelectorAll('.wishlist-btn');
-    
-    wishlistBtns.forEach(btn => {
-        btn.addEventListener('click', function(e) {
+    // Smooth scrolling for anchor links
+    document.querySelectorAll('a[href^="#"]').forEach(function(anchor) {
+        anchor.addEventListener('click', function (e) {
             e.preventDefault();
-            e.stopPropagation();
-            
-            const destinationId = this.dataset.destinationId;
-            const isActive = this.classList.contains('active');
-            
-            // Toggle wishlist status
-            toggleWishlist(destinationId, !isActive, this);
-        });
-    });
-}
-
-// Filter chips functionality
-function initializeFilters() {
-    const filterChips = document.querySelectorAll('.filter-chip');
-    
-    filterChips.forEach(chip => {
-        chip.addEventListener('click', function(e) {
-            e.preventDefault();
-            
-            // Toggle active state
-            this.classList.toggle('active');
-            
-            // Apply filters (implement based on your needs)
-            const activeFilters = Array.from(document.querySelectorAll('.filter-chip.active'))
-                .map(chip => chip.dataset.category);
-            
-            applyFilters(activeFilters);
-        });
-    });
-}
-
-// Initialize Bootstrap tooltips
-function initializeTooltips() {
-    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-    tooltipTriggerList.map(function (tooltipTriggerEl) {
-        return new bootstrap.Tooltip(tooltipTriggerEl);
-    });
-}
-
-// Smooth scrolling for anchor links
-function initializeSmoothScroll() {
-    const links = document.querySelectorAll('a[href^="#"]');
-    
-    links.forEach(link => {
-        link.addEventListener('click', function(e) {
-            const href = this.getAttribute('href');
-            if (href === '#') return;
-            
-            const target = document.querySelector(href);
+            const target = document.querySelector(this.getAttribute('href'));
             if (target) {
-                e.preventDefault();
                 target.scrollIntoView({
                     behavior: 'smooth',
                     block: 'start'
@@ -133,237 +86,130 @@ function initializeSmoothScroll() {
             }
         });
     });
-}
-
-// Wishlist toggle function
-function toggleWishlist(destinationId, add, button) {
-    // Show loading state
-    const originalIcon = button.innerHTML;
-    button.innerHTML = '<div class="loading-spinner"></div>';
-    button.disabled = true;
     
-    // Simulate API call (replace with actual implementation)
-    setTimeout(() => {
-        if (add) {
-            button.classList.add('active');
-            button.innerHTML = '<i class="fas fa-heart"></i>';
-            showToast('Added to wishlist!', 'success');
-        } else {
-            button.classList.remove('active');
-            button.innerHTML = '<i class="far fa-heart"></i>';
-            showToast('Removed from wishlist', 'info');
-        }
+    // Add loading animation to cards
+    const cards = document.querySelectorAll('.card');
+    cards.forEach(function(card, index) {
+        card.style.animationDelay = (index * 0.1) + 's';
+        card.classList.add('fade-in');
+    });
+    
+    // Enhanced search functionality
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) {
+        let searchTimeout;
         
-        button.disabled = false;
-    }, 500);
-    
-    // In a real implementation, you would make an AJAX call here:
-    /*
-    fetch('/api/wishlist/toggle/', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': getCsrfToken()
-        },
-        body: JSON.stringify({
-            'destination_id': destinationId,
-            'action': add ? 'add' : 'remove'
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            if (add) {
-                button.classList.add('active');
-                button.innerHTML = '<i class="fas fa-heart"></i>';
-                showToast('Added to wishlist!', 'success');
-            } else {
-                button.classList.remove('active');
-                button.innerHTML = '<i class="far fa-heart"></i>';
-                showToast('Removed from wishlist', 'info');
-            }
-        } else {
-            showToast('Error updating wishlist', 'error');
-            button.innerHTML = originalIcon;
-        }
-        button.disabled = false;
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        showToast('Error updating wishlist', 'error');
-        button.innerHTML = originalIcon;
-        button.disabled = false;
-    });
-    */
-}
-
-// Apply filters function
-function applyFilters(activeFilters) {
-    const cards = document.querySelectorAll('.destination-card');
-    
-    cards.forEach(card => {
-        if (activeFilters.length === 0) {
-            // Show all cards if no filters are active
-            card.style.display = 'block';
-        } else {
-            const cardCategories = (card.dataset.categories || '').split(',');
-            const hasMatchingCategory = activeFilters.some(filter => 
-                cardCategories.includes(filter)
-            );
+        searchInput.addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            const query = this.value.trim();
             
-            card.style.display = hasMatchingCategory ? 'block' : 'none';
-        }
-    });
-    
-    // Update results count
-    const visibleCards = Array.from(cards).filter(card => 
-        card.style.display !== 'none'
-    ).length;
-    
-    const resultsCount = document.querySelector('#resultsCount');
-    if (resultsCount) {
-        resultsCount.textContent = `${visibleCards} destination${visibleCards !== 1 ? 's' : ''} found`;
+            searchTimeout = setTimeout(function() {
+                if (query.length >= 2) {
+                    // You can implement live search suggestions here
+                    console.log('Searching for:', query);
+                }
+            }, 300);
+        });
     }
-}
-
-// Toast notification function
-function showToast(message, type = 'info') {
-    const toastContainer = getOrCreateToastContainer();
     
-    const toast = document.createElement('div');
-    toast.className = `toast align-items-center text-white bg-${type} border-0`;
-    toast.setAttribute('role', 'alert');
-    toast.setAttribute('aria-live', 'assertive');
-    toast.setAttribute('aria-atomic', 'true');
-    
-    toast.innerHTML = `
-        <div class="d-flex">
-            <div class="toast-body">
-                ${getToastIcon(type)} ${message}
-            </div>
-            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-        </div>
-    `;
-    
-    toastContainer.appendChild(toast);
-    
-    const bsToast = new bootstrap.Toast(toast);
-    bsToast.show();
-    
-    // Remove toast element after it's hidden
-    toast.addEventListener('hidden.bs.toast', () => {
-        toast.remove();
-    });
-}
-
-// Get or create toast container
-function getOrCreateToastContainer() {
-    let container = document.querySelector('#toastContainer');
-    if (!container) {
-        container = document.createElement('div');
-        container.id = 'toastContainer';
-        container.className = 'toast-container position-fixed bottom-0 end-0 p-3';
-        document.body.appendChild(container);
-    }
-    return container;
-}
-
-// Get toast icon based on type
-function getToastIcon(type) {
-    const icons = {
-        success: '<i class="fas fa-check-circle me-2"></i>',
-        error: '<i class="fas fa-exclamation-triangle me-2"></i>',
-        warning: '<i class="fas fa-exclamation-circle me-2"></i>',
-        info: '<i class="fas fa-info-circle me-2"></i>'
+    // Wishlist functionality
+    window.toggleWishlist = function(destinationId, button) {
+        if (!button) return;
+        
+        const icon = button.querySelector('i');
+        const originalClass = icon.className;
+        
+        // Show loading state
+        icon.className = 'fas fa-spinner fa-spin';
+        button.disabled = true;
+        
+        fetch('/toggle_wishlist/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({
+                destination_id: destinationId
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                if (data.added) {
+                    icon.className = 'fas fa-heart';
+                    button.classList.add('active');
+                    showNotification(data.message, 'success');
+                } else {
+                    icon.className = 'far fa-heart';
+                    button.classList.remove('active');
+                    showNotification(data.message, 'info');
+                }
+            } else {
+                icon.className = originalClass;
+                showNotification(data.message || 'Error updating wishlist', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            icon.className = originalClass;
+            showNotification('Network error. Please try again.', 'error');
+        })
+        .finally(() => {
+            button.disabled = false;
+        });
     };
-    return icons[type] || icons.info;
-}
-
-// Get CSRF token for Django
-function getCsrfToken() {
-    const cookies = document.cookie.split(';');
-    for (let cookie of cookies) {
-        const [name, value] = cookie.trim().split('=');
-        if (name === 'csrftoken') {
-            return value;
+    
+    // Utility function to get CSRF token
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
         }
+        return cookieValue;
     }
-    return '';
-}
-
-// Debounce function for search
-function debounce(func, wait) {
-    let timeout;
-    return function executedFunction(...args) {
-        const later = () => {
-            clearTimeout(timeout);
-            func(...args);
-        };
-        clearTimeout(timeout);
-        timeout = setTimeout(later, wait);
-    };
-}
-
-// Card hover effects
-document.addEventListener('mouseenter', function(e) {
-    if (e.target.closest('.card')) {
-        e.target.closest('.card').style.transform = 'translateY(-10px)';
-    }
-}, true);
-
-document.addEventListener('mouseleave', function(e) {
-    if (e.target.closest('.card')) {
-        e.target.closest('.card').style.transform = 'translateY(0)';
-    }
-}, true);
-
-// Navbar scroll effect
-window.addEventListener('scroll', function() {
-    const navbar = document.querySelector('.navbar');
-    if (navbar) {
-        if (window.scrollY > 50) {
-            navbar.classList.add('navbar-scrolled');
-        } else {
-            navbar.classList.remove('navbar-scrolled');
-        }
-    }
-});
-
-// Add CSS for navbar scroll effect
-const style = document.createElement('style');
-style.textContent = `
-    .navbar-scrolled {
-        background: rgba(13, 110, 253, 0.95) !important;
-        backdrop-filter: blur(10px);
-    }
-`;
-document.head.appendChild(style);
-
-// Loading screen (optional)
-window.addEventListener('load', function() {
-    const loader = document.querySelector('#loader');
-    if (loader) {
-        loader.style.opacity = '0';
+    
+    // Simple notification system
+    function showNotification(message, type = 'info') {
+        const notification = document.createElement('div');
+        notification.className = `alert alert-${type} alert-dismissible fade show notification-toast`;
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            min-width: 300px;
+        `;
+        
+        notification.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        
+        document.body.appendChild(notification);
+        
+        // Auto remove after 5 seconds
         setTimeout(() => {
-            loader.style.display = 'none';
-        }, 300);
+            if (notification.parentNode) {
+                notification.remove();
+            }
+        }, 5000);
+    }
+    
+    // Initialize tooltips if Bootstrap is available
+    if (typeof bootstrap !== 'undefined') {
+        const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
     }
 });
 
-// Image lazy loading fallback for older browsers
-if ('loading' in HTMLImageElement.prototype) {
-    const images = document.querySelectorAll('img[loading="lazy"]');
-    images.forEach(img => {
-        img.src = img.dataset.src || img.src;
-    });
-} else {
-    // Fallback for browsers that don't support lazy loading
-    const script = document.createElement('script');
-    script.src = 'https://cdn.jsdelivr.net/npm/lozad@1.16.0/dist/lozad.min.js';
-    document.head.appendChild(script);
-    
-    script.onload = function() {
-        const observer = lozad();
-        observer.observe();
-    };
-}
+console.log('Smart Tourism India - Main JS loaded successfully!');

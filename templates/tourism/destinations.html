@@ -1,9 +1,32 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load destination_extras %}
 
 {% block title %}All Destinations - Smart Tourism India{% endblock %}
 
 {% block content %}
+<!-- Hero Section with Video Background -->
+<section class="page-hero-section destinations-hero" id="destinations-hero">
+    <!-- Video Background -->
+    <div class="page-hero-video">
+        <video autoplay muted loop playsinline class="destinations-video">
+            <source src="{% static 'videos/destinations-bg.mp4' %}" type="video/mp4">
+            <source src="{% static 'videos/destinations-bg.webm' %}" type="video/webm">
+        </video>
+        <img src="{% static 'images/backgrounds/destinations-bg.jpg' %}" alt="Mountains Background" class="page-hero-video-fallback">
+    </div>
+    
+    <div class="page-hero-content">
+        <h1 class="page-hero-title">
+            <i class="fas fa-mountain me-3"></i>
+            Discover Amazing Destinations
+        </h1>
+        <p class="page-hero-subtitle">
+            Explore India's most beautiful and iconic places - from majestic mountains to pristine beaches
+        </p>
+    </div>
+</section>
+
 <div class="container-fluid py-5 bg-light">
     <div class="container">
         <div class="row">
@@ -51,9 +74,18 @@
                                     <option value="3.5" {% if selected_rating == '3.5' %}selected{% endif %}>3.5+ Stars</option>
                                 </select>
                             </div>
-                            <div class="col-md-2">
+                            <div class="col-md-1 d-flex align-items-center justify-content-center">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="featured" value="1" id="id_featured" 
+                                           {% if selected_featured == '1' or selected_featured == 'true' %}checked{% endif %}>
+                                    <label class="form-check-label" for="id_featured" title="Featured Destinations Only">
+                                        🌟
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-1">
                                 <button type="submit" class="btn btn-primary w-100">
-                                    <i class="fas fa-search"></i> Search
+                                    <i class="fas fa-search"></i>
                                 </button>
                             </div>
                         </form>
@@ -63,7 +95,7 @@
                 <!-- Results Count -->
                 <div class="mb-3">
                     <p class="text-muted">
-                        Found {{ destinations|length }} destination{{ destinations|length|pluralize }}
+                        Found {{ destinations|length }} {% if selected_featured == '1' or selected_featured == 'true' %}<span class="text-warning"><i class="fas fa-star"></i> featured</span> {% endif %}destination{{ destinations|length|pluralize }}
                         {% if search_query %}for "{{ search_query }}"{% endif %}
                     </p>
                 </div>
@@ -71,62 +103,7 @@
                 <!-- Destinations Grid -->
                 <div class="row">
                     {% for destination in destinations %}
-                        <div class="col-lg-4 col-md-6 mb-4">
-                            <div class="card h-100 shadow-sm destination-card">
-                                {% if destination.main_image %}
-                                    <img src="{{ destination.main_image.url }}" class="card-img-top" 
-                                         alt="{{ destination.name }}" style="height: 250px; object-fit: cover;">
-                                {% else %}
-                                    <div class="card-img-top bg-secondary d-flex align-items-center justify-content-center" 
-                                         style="height: 250px;">
-                                        <i class="fas fa-image fa-3x text-white"></i>
-                                    </div>
-                                {% endif %}
-                                
-                                <div class="card-body d-flex flex-column">
-                                    <h5 class="card-title">{{ destination.name }}</h5>
-                                    <p class="card-text text-muted mb-2">
-                                        <i class="fas fa-map-marker-alt"></i> 
-                                        {{ destination.city }}, {{ destination.state.name }}
-                                    </p>
-                                    <p class="card-text">{{ destination.short_description|truncatewords:20 }}</p>
-                                    
-                                    <!-- Categories -->
-                                    <div class="mb-2">
-                                        {% for category in destination.categories.all %}
-                                            <span class="badge bg-primary me-1">
-                                                {{ category.get_name_display }}
-                                            </span>
-                                        {% endfor %}
-                                    </div>
-                                    
-                                    <!-- Rating -->
-                                    <div class="mb-3">
-                                        <div class="d-flex align-items-center">
-                                            <div class="me-2">
-                                                {% for i in "12345" %}
-                                                    {% if forloop.counter <= destination.average_rating %}
-                                                        <i class="fas fa-star text-warning"></i>
-                                                    {% else %}
-                                                        <i class="far fa-star text-warning"></i>
-                                                    {% endif %}
-                                                {% endfor %}
-                                            </div>
-                                            <small class="text-muted">
-                                                {{ destination.average_rating }} ({{ destination.total_reviews }} reviews)
-                                            </small>
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="mt-auto">
-                                        <a href="{% url 'tourism:destination_detail' destination.slug %}" 
-                                           class="btn btn-primary">
-                                            <i class="fas fa-eye"></i> View Details
-                                        </a>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                        {% destination_card destination show_description=True %}
                     {% empty %}
                         <div class="col-12">
                             <div class="alert alert-info text-center">
@@ -143,10 +120,10 @@
                         <ul class="pagination justify-content-center">
                             {% if page_obj.has_previous %}
                                 <li class="page-item">
-                                    <a class="page-link" href="?page=1{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.state %}&state={{ request.GET.state }}{% endif %}{% if request.GET.rating %}&rating={{ request.GET.rating }}{% endif %}">First</a>
+                                    <a class="page-link" href="?page=1{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.state %}&state={{ request.GET.state }}{% endif %}{% if request.GET.rating %}&rating={{ request.GET.rating }}{% endif %}{% if request.GET.featured %}&featured={{ request.GET.featured }}{% endif %}">First</a>
                                 </li>
                                 <li class="page-item">
-                                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.state %}&state={{ request.GET.state }}{% endif %}{% if request.GET.rating %}&rating={{ request.GET.rating }}{% endif %}">Previous</a>
+                                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.state %}&state={{ request.GET.state }}{% endif %}{% if request.GET.rating %}&rating={{ request.GET.rating }}{% endif %}{% if request.GET.featured %}&featured={{ request.GET.featured }}{% endif %}">Previous</a>
                                 </li>
                             {% endif %}
                             
@@ -156,10 +133,10 @@
                             
                             {% if page_obj.has_next %}
                                 <li class="page-item">
-                                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.state %}&state={{ request.GET.state }}{% endif %}{% if request.GET.rating %}&rating={{ request.GET.rating }}{% endif %}">Next</a>
+                                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.state %}&state={{ request.GET.state }}{% endif %}{% if request.GET.rating %}&rating={{ request.GET.rating }}{% endif %}{% if request.GET.featured %}&featured={{ request.GET.featured }}{% endif %}">Next</a>
                                 </li>
                                 <li class="page-item">
-                                    <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.state %}&state={{ request.GET.state }}{% endif %}{% if request.GET.rating %}&rating={{ request.GET.rating }}{% endif %}">Last</a>
+                                    <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.state %}&state={{ request.GET.state }}{% endif %}{% if request.GET.rating %}&rating={{ request.GET.rating }}{% endif %}{% if request.GET.featured %}&featured={{ request.GET.featured }}{% endif %}">Last</a>
                                 </li>
                             {% endif %}
                         </ul>
